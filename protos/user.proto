@@ -1,0 +1,13 @@
+syntax = "proto3";
+package user;
+
+message testRequest {
+    string name = 1;
+}
+
+message testResponse {
+    string message = 1;
+}
+service AuthService {
+    rpc test(testRequest) returns (testResponse);
+}
