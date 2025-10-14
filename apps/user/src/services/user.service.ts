@@ -1,8 +1,26 @@
 import { Injectable } from '@nestjs/common';
+import { UserEntity } from '../database/entities/user.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { GoogleUserProfile } from '../common/interfaces/google-auth.interface';
 
 @Injectable()
 export class UserService {
-  getHello(): string {
-    return 'Hello World!';
+  constructor(@InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>) {} 
+  async createUser(userProfile: GoogleUserProfile): Promise<UserEntity> {
+    let user = await this.userRepository.findOne({
+      where: { email: userProfile.email },
+    });
+    if (!user) {
+      user = this.userRepository.create({
+        email: userProfile.email,
+        fullname: userProfile.name,
+        avatarUrl: userProfile.picture,
+        verified: userProfile.verified_email,
+      });
+      user = await this.userRepository.save(user);
+    }
+    if(!user.verified) this.userRepository.update(user.id, { verified: true });
+    return user;
   }
 }

@@ -7,6 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { AuthService } from './services/auth.service';
 import { AuthController } from './controllers/auth.controller';
+import { HttpModule } from '@nestjs/axios';
+import { UserEntity } from './database/entities/user.entity';
 
 @Module({
   imports: [
@@ -17,6 +19,11 @@ import { AuthController } from './controllers/auth.controller';
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmDbConfig,
     }),
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 5,
+    }),
+    TypeOrmModule.forFeature([UserEntity]),
   ],
   controllers: [UserController, AuthController],
   providers: [UserService, AuthService],

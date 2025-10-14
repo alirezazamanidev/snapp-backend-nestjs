@@ -18,6 +18,7 @@ const clientConfig: ClientProviderOptions[] = [
 @Module({
   imports:[
     ClientsModule.register(clientConfig)
-  ]
+  ],
+  exports:[ClientsModule]
 })
 export class ClientConfigModule {}
