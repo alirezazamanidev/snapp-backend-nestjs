@@ -37,3 +37,13 @@ export interface IAuthService {
     invalidateSession(request: IInvalidateSessionRequest): Observable<IInvalidateSessionResponse>;
     invalidateAllSessions(request: IInvalidateAllSessionsRequest): Observable<IInvalidateAllSessionsResponse>;
 }
+export interface IUpdateUserRoleRequest {
+    userId: string;
+    role: string;
+}
+export interface IUpdateUserRoleResponse {
+    message: string;
+}
+export interface IUserService {
+    updateUserRole(request: IUpdateUserRoleRequest): Promise<IUpdateUserRoleResponse>;
+}

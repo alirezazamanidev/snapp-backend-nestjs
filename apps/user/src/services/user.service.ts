@@ -3,6 +3,7 @@ import { UserEntity } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GoogleUserProfile } from '../common/interfaces/google-auth.interface';
+import { IUpdateUserRoleRequest, type IUpdateUserRoleResponse, Role } from '@app/common';
 
 @Injectable()
 export class UserService {
@@ -22,5 +23,12 @@ export class UserService {
     }
     if(!user.verified) this.userRepository.update(user.id, { verified: true });
     return user;
+  }
+  async updateUserRole(dto: IUpdateUserRoleRequest): Promise<IUpdateUserRoleResponse> {
+    
+    await this.userRepository.update(dto.userId, { role: dto.role as Role });
+    return {
+      message: 'User role updated successfully',
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { BaseEntity } from '@app/common';
+import { BaseEntity, Role } from '@app/common';
 import { Column, CreateDateColumn, Entity, UpdateDateColumn } from 'typeorm';
 
 @Entity('users')
@@ -9,8 +9,8 @@ export class UserEntity extends BaseEntity {
   email: string;
   @Column({ default: false })
   verified: boolean;
-  @Column({ default: 'user' })
-  role: string;
+  @Column({type: 'enum', enum: Role, nullable: true })
+  role: Role;
   @Column({ default: null })
   avatarUrl: string;
   @CreateDateColumn()

@@ -44,3 +44,15 @@ service AuthService {
     rpc invalidateSession(InvalidateSessionRequest) returns (InvalidateSessionResponse);
     rpc invalidateAllSessions(InvalidateAllSessionsRequest) returns (InvalidateAllSessionsResponse);
 }
+
+message UpdateUserRoleRequest {
+    string userId = 1;
+    string role = 2;
+}
+
+message UpdateUserRoleResponse {
+    string message = 1;
+}
+service UserService {
+    rpc updateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
+}
