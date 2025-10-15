@@ -6,6 +6,7 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 
 import type { Request, Response } from 'express';
@@ -17,6 +18,7 @@ import {
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController implements OnModuleInit {
@@ -58,5 +60,12 @@ export class AuthController implements OnModuleInit {
     }).json({
       message: 'Authentication successful',
     })
+  }
+  @Get('check-login')
+  @UseGuards(AuthGuard)
+  checkLogin(@Req() req: Request) {
+    return {
+      success: true,
+    }
   }
 }

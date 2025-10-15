@@ -12,6 +12,16 @@ message GoogleLoginResponse {
     string sessionId = 2;
 }
 
+message ValidateSessionRequest {
+    string sessionId = 1;
+}
+
+message ValidateSessionResponse {
+    string userId = 1;
+    string sessionId = 2;
+
+}
 service AuthService {
     rpc googleLogin(GoogleLoginRequest) returns (GoogleLoginResponse);
+    rpc validateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
 }

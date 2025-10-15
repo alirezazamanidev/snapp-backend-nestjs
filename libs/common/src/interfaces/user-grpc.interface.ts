@@ -12,6 +12,14 @@ export interface IGoogleLoginResponse {
     message: string;
     sessionId: string;
 }
+export interface IValidateSessionRequest {
+    sessionId: string;  
+}
+export interface IValidateSessionResponse {
+    userId: string;
+    sessionId: string;
+}
 export interface IAuthService {
     googleLogin(request: IGoogleLoginRequest): Observable<IGoogleLoginResponse>;
+    validateSession(request: IValidateSessionRequest): Observable<IValidateSessionResponse>;
 }
