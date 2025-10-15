@@ -1,49 +1,70 @@
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
 
 export const USER_PACKAGE_NAME = 'user';
 export const USER_SERVICE_NAME = 'UserService';
 export const AUTH_SERVICE_NAME = 'AuthService';
 export interface IGoogleLoginRequest {
-    code: string;
-    ipAddress: string;
-    userAgent: string;
+  code: string;
+  ipAddress: string;
+  userAgent: string;
 }
 export interface IGoogleLoginResponse {
-    message: string;
-    sessionId: string;
+  message: string;
+  sessionId: string;
 }
 export interface IValidateSessionRequest {
-    sessionId: string;  
+  sessionId: string;
 }
 export interface IValidateSessionResponse {
-    userId: string;
-    sessionId: string;
+  userId: string;
+  sessionId: string;
 }
 export interface IInvalidateSessionRequest {
-    sessionId: string;
+  sessionId: string;
 }
 export interface IInvalidateSessionResponse {
-    message: string;
+  message: string;
 }
 export interface IInvalidateAllSessionsRequest {
-    userId: string;
+  userId: string;
 }
 export interface IInvalidateAllSessionsResponse {
-    message: string;
+  message: string;
 }
 export interface IAuthService {
-    googleLogin(request: IGoogleLoginRequest): Observable<IGoogleLoginResponse>;
-    validateSession(request: IValidateSessionRequest): Observable<IValidateSessionResponse>;
-    invalidateSession(request: IInvalidateSessionRequest): Observable<IInvalidateSessionResponse>;
-    invalidateAllSessions(request: IInvalidateAllSessionsRequest): Observable<IInvalidateAllSessionsResponse>;
+  googleLogin(request: IGoogleLoginRequest): Observable<IGoogleLoginResponse>;
+  validateSession(
+    request: IValidateSessionRequest,
+  ): Observable<IValidateSessionResponse>;
+  invalidateSession(
+    request: IInvalidateSessionRequest,
+  ): Observable<IInvalidateSessionResponse>;
+  invalidateAllSessions(
+    request: IInvalidateAllSessionsRequest,
+  ): Observable<IInvalidateAllSessionsResponse>;
 }
 export interface IUpdateUserRoleRequest {
-    userId: string;
-    role: string;
+  userId: string;
+  role: string;
 }
 export interface IUpdateUserRoleResponse {
-    message: string;
+  message: string;
+}
+export interface ICreateOrUpdateDriverProfileRequest {
+  userId: string;
+
+  carPlateNumber: string;
+  carModel: string;
+  carColor: string;
+}
+export interface ICreateOrUpdateDriverProfileResponse {
+  message: string;
 }
 export interface IUserService {
-    updateUserRole(request: IUpdateUserRoleRequest): Promise<IUpdateUserRoleResponse>;
+  updateUserRole(
+    request: IUpdateUserRoleRequest,
+  ): Promise<IUpdateUserRoleResponse>;
+  createOrUpdateDriverProfile(
+    request: ICreateOrUpdateDriverProfileRequest,
+  ): Promise<ICreateOrUpdateDriverProfileResponse>;
 }

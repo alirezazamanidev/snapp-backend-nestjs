@@ -12,3 +12,18 @@ export class UpdateUserRoleDto {
     @IsNotEmpty()
     role: Role.USER | Role.DRIVER;
 }
+
+export class CreateOrUpdateDriverProfileDto {
+    @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
+    carPlateNumber: string;
+    @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
+    carModel: string;
+    @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
+    carColor: string;
+}

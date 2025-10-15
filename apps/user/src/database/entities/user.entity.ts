@@ -1,5 +1,6 @@
 import { BaseEntity, Role } from '@app/common';
-import { Column, CreateDateColumn, Entity, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToOne, UpdateDateColumn } from 'typeorm';
+import { DriverProfilesEntity } from './driver-profiles.entity';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
@@ -17,4 +18,7 @@ export class UserEntity extends BaseEntity {
   createdAt: Date;
   @UpdateDateColumn()
   updatedAt: Date;
+  // relations
+  @OneToOne(() => DriverProfilesEntity, (driverProfile) => driverProfile.user)
+  driverProfile: DriverProfilesEntity;
 }

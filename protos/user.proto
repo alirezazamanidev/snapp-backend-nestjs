@@ -53,6 +53,19 @@ message UpdateUserRoleRequest {
 message UpdateUserRoleResponse {
     string message = 1;
 }
+
+message CreateOrUpdateDriverProfileRequest {
+    string userId = 1;
+    string carPlateNumber = 2;
+    string carModel = 3;
+    string carColor = 4;
+}
+
+message CreateOrUpdateDriverProfileResponse {
+    string message = 1;
+}
+
 service UserService {
     rpc updateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
+    rpc createOrUpdateDriverProfile(CreateOrUpdateDriverProfileRequest) returns (CreateOrUpdateDriverProfileResponse);
 }

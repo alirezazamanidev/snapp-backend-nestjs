@@ -12,6 +12,7 @@ import { UserEntity } from './database/entities/user.entity';
 import { SessionEntity } from './database/entities/session.entity';
 import { RedisModule } from '@app/common/configs/redis.config';
 import { SessionService } from './services/session.service';
+import { DriverProfilesEntity } from './database/entities/driver-profiles.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { SessionService } from './services/session.service';
       timeout: 10000,
       maxRedirects: 5,
     }),
-    TypeOrmModule.forFeature([UserEntity, SessionEntity]),
+    TypeOrmModule.forFeature([UserEntity, SessionEntity, DriverProfilesEntity]),
     RedisModule.forRoot(process.env.REDIS_URL as string),
   ],
   controllers: [UserController, AuthController],
