@@ -1,0 +1,11 @@
+syntax = "proto3";
+package ride_matching;
+
+service RideMatchingService {
+    rpc matchRide(MatchRideRequest) returns (MatchRideResponse);
+}
+
+message MatchRideRequest {
+    string userId = 1;
+}
+

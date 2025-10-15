@@ -49,6 +49,15 @@
         "watchAssets": true
       }
     },
+    "ride-matching": {
+      "type": "application",
+      "root": "apps/ride-matching",
+      "entryFile": "main",
+      "sourceRoot": "apps/ride-matching/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ride-matching/tsconfig.app.json"
+      }
+    },
     "user": {
       "type": "application",
       "root": "apps/user",
