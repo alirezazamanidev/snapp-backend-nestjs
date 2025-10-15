@@ -1,0 +1,15 @@
+syntax = "proto3";
+package location;
+
+service LocationService {
+    rpc updateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
+}
+
+message UpdateLocationRequest {
+    string userId = 1;
+    string latitude = 2;
+    string longitude = 3;
+}
+message UpdateLocationResponse {
+    string message = 1;
+}

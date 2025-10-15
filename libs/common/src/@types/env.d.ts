@@ -12,6 +12,7 @@ declare global {
 
       // grpc
       USER_GRPC_URI: string;
+      LOCATION_GRPC_URI: string;
       // GOOGLE
       GOOGLE_CLIENT_ID: string;
       GOOGLE_CLIENT_SECRET: string;

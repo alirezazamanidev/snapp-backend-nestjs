@@ -57,7 +57,7 @@ export class AuthController implements OnModuleInit {
     res.cookie('snapp-session', result.sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       sameSite: 'lax',
       path: '/',
     }).json({

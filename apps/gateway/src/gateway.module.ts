@@ -4,6 +4,7 @@ import { join } from 'path';
 import { ClientConfigModule } from './configs/client.config';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
+import { LocationController } from './controllers/location.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -13,6 +14,6 @@ import { UserController } from './controllers/user.controller';
     ClientConfigModule,
   ],
 
-  controllers: [AuthController, UserController],
+  controllers: [AuthController, UserController, LocationController],
 })
 export class GatewayModule {}
