@@ -1,4 +1,4 @@
-import { LOCATION_PACKAGE_NAME, USER_PACKAGE_NAME } from "@app/common";
+import { LOCATION_PACKAGE_NAME, RIDE_MATCHING_PACKAGE_NAME, USER_PACKAGE_NAME } from "@app/common";
 
 import { Global, Module } from "@nestjs/common";
 import { ClientProviderOptions, ClientsModule, Transport } from "@nestjs/microservices";
@@ -24,6 +24,15 @@ const clientConfig: ClientProviderOptions[] = [
             package: LOCATION_PACKAGE_NAME,
             protoPath: join(process.cwd(), 'protos/location.proto'),
             url: process.env.LOCATION_GRPC_URI,
+        },
+    },
+    {
+        name: RIDE_MATCHING_PACKAGE_NAME,
+        transport: Transport.GRPC,
+        options: {
+            package: RIDE_MATCHING_PACKAGE_NAME,
+            protoPath: join(process.cwd(), 'protos/ride-matching.proto'),
+            url: process.env.RIDE_MATCHING_GRPC_URI,
         },
     },
 ]

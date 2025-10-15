@@ -2,10 +2,15 @@ syntax = "proto3";
 package ride_matching;
 
 service RideMatchingService {
-    rpc matchRide(MatchRideRequest) returns (MatchRideResponse);
+    rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
 }
 
-message MatchRideRequest {
+message RequestRideRequest {
     string userId = 1;
+    map<string, double> pickupLocation = 2;
+    map<string, double> destinationLocation = 3;
 }
 
+message RequestRideResponse {
+    string message = 1;
+}

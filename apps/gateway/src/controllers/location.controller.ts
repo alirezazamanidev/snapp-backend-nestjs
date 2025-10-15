@@ -33,11 +33,5 @@ export class LocationController implements OnModuleInit {
       ...dto
     });
   }
-  @ApiOperation({ summary: 'get nearby drivers' })
-  @Post('get-nearby-drivers')
-  @UseGuards(AuthGuard)
-  @ApiConsumes(SwaggerConsumes.URL_ENCODED,SwaggerConsumes.JSON)
-  async getNearbyDrivers(@Body() dto: GetNearbyDriversDto, @Req() req: Request) {
-    return this.locationClientService.getNearbyDrivers(dto);
-  }
+  
 }
