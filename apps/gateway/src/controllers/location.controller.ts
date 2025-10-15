@@ -7,7 +7,7 @@ import { Body, Controller, Inject, OnModuleInit, Post, Req, UseGuards } from '@n
 
 import type { ClientGrpc } from '@nestjs/microservices';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { UpdateLocationDto } from '../dtos/location.dto';
+import { GetNearbyDriversDto, UpdateLocationDto } from '../dtos/location.dto';
 import type{ Request } from 'express';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { SwaggerConsumes } from '../common/enums/swagger.enum';
@@ -32,5 +32,12 @@ export class LocationController implements OnModuleInit {
       userId: req.user.userId,
       ...dto
     });
+  }
+  @ApiOperation({ summary: 'get nearby drivers' })
+  @Post('get-nearby-drivers')
+  @UseGuards(AuthGuard)
+  @ApiConsumes(SwaggerConsumes.URL_ENCODED,SwaggerConsumes.JSON)
+  async getNearbyDrivers(@Body() dto: GetNearbyDriversDto, @Req() req: Request) {
+    return this.locationClientService.getNearbyDrivers(dto);
   }
 }
