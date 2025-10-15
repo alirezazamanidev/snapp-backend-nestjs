@@ -8,6 +8,7 @@ import { UserEntity } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserService } from './user.service';
 import { GoogleTokenResponse, GoogleUserProfile } from '../common/interfaces/google-auth.interface';
+import { SessionService } from './session.service';
 
 
 @Injectable()
@@ -17,13 +18,15 @@ export class AuthService {
   constructor(
    
     private readonly httpService: HttpService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly sessionService: SessionService
   ) {}
 
   async googleLogin(
     payload: IGoogleLoginRequest,
   ): Promise<IGoogleLoginResponse> {
     try {
+    
       if (!payload.code) {
         throw new RpcException({
           code: 400,
@@ -36,15 +39,14 @@ export class AuthService {
       const user=await this.userService.createUser(userProfile);
     
       // generate session
+      const sessionId = await this.sessionService.create(user.id, payload.ipAddress, payload.userAgent);
       return {
         message: 'Authentication successful',
+        sessionId,
       };
     } catch (error) {
       this.logger.error('Google login failed', error);
 
-      if (error instanceof RpcException) {
-        throw error;
-      }
 
       throw new RpcException({
         code: 500,
@@ -111,10 +113,10 @@ export class AuthService {
 
       const response = await lastValueFrom(
         this.httpService
-          .post<GoogleTokenResponse>(tokenUrl, requestBody, {
+          .post<GoogleTokenResponse>(tokenUrl, JSON.stringify(requestBody), {
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
-              Accept: 'application/json',
+            
             },
           })
           .pipe(

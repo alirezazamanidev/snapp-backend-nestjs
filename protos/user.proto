@@ -3,10 +3,13 @@ package user;
 
 message GoogleLoginRequest {
     string code = 1;
+    string ipAddress = 2;
+    string userAgent = 3;
 }
 
 message GoogleLoginResponse {
     string message = 1;
+    string sessionId = 2;
 }
 
 service AuthService {

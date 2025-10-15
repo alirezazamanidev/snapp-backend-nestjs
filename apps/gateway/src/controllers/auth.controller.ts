@@ -1,17 +1,30 @@
-import { Controller, Get, Inject, OnModuleInit, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  OnModuleInit,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AUTH_SERVICE_NAME, IAuthService, USER_PACKAGE_NAME } from '@app/common';
+import {
+  AUTH_SERVICE_NAME,
+  IAuthService,
+  USER_PACKAGE_NAME,
+} from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 
 @Controller('auth')
-export class AuthController implements OnModuleInit{
-  private authclientService:IAuthService
-  constructor(@Inject(USER_PACKAGE_NAME) private readonly client:ClientGrpc) {}
+export class AuthController implements OnModuleInit {
+  private authclientService: IAuthService;
+  constructor(@Inject(USER_PACKAGE_NAME) private readonly client: ClientGrpc) {}
 
   onModuleInit() {
-    this.authclientService = this.client.getService<IAuthService>(AUTH_SERVICE_NAME);
+    this.authclientService =
+      this.client.getService<IAuthService>(AUTH_SERVICE_NAME);
   }
 
   @ApiOperation({ summary: 'Redirect to Google OAuth login' })
@@ -22,7 +35,11 @@ export class AuthController implements OnModuleInit{
     res.redirect(url);
   }
   @Get('google/verify')
-  verifyGoogle(@Query('code') code: string) {
-    return this.authclientService.googleLogin({ code });
+  verifyGoogle(@Query('code') code: string, @Req() req: Request) {
+    return this.authclientService.googleLogin({
+      code,
+      ipAddress: req.ip as string,
+      userAgent: req.headers['user-agent'] as string,
+    });
   }
 }

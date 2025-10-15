@@ -9,6 +9,9 @@ import { AuthService } from './services/auth.service';
 import { AuthController } from './controllers/auth.controller';
 import { HttpModule } from '@nestjs/axios';
 import { UserEntity } from './database/entities/user.entity';
+import { SessionEntity } from './database/entities/session.entity';
+import { RedisModule } from '@app/common/configs/redis.config';
+import { SessionService } from './services/session.service';
 
 @Module({
   imports: [
@@ -23,9 +26,10 @@ import { UserEntity } from './database/entities/user.entity';
       timeout: 10000,
       maxRedirects: 5,
     }),
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, SessionEntity]),
+    RedisModule.forRoot(process.env.REDIS_URL as string),
   ],
   controllers: [UserController, AuthController],
-  providers: [UserService, AuthService],
+  providers: [UserService, AuthService, SessionService],
 })
 export class UserModule {}
