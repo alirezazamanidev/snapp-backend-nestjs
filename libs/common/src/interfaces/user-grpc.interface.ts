@@ -19,7 +19,21 @@ export interface IValidateSessionResponse {
     userId: string;
     sessionId: string;
 }
+export interface IInvalidateSessionRequest {
+    sessionId: string;
+}
+export interface IInvalidateSessionResponse {
+    message: string;
+}
+export interface IInvalidateAllSessionsRequest {
+    userId: string;
+}
+export interface IInvalidateAllSessionsResponse {
+    message: string;
+}
 export interface IAuthService {
     googleLogin(request: IGoogleLoginRequest): Observable<IGoogleLoginResponse>;
     validateSession(request: IValidateSessionRequest): Observable<IValidateSessionResponse>;
+    invalidateSession(request: IInvalidateSessionRequest): Observable<IInvalidateSessionResponse>;
+    invalidateAllSessions(request: IInvalidateAllSessionsRequest): Observable<IInvalidateAllSessionsResponse>;
 }

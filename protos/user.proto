@@ -21,7 +21,26 @@ message ValidateSessionResponse {
     string sessionId = 2;
 
 }
+
+message InvalidateSessionRequest {
+    string sessionId = 1;
+}
+
+message InvalidateSessionResponse {
+    string message = 1;
+}
+
+message InvalidateAllSessionsRequest {
+    string userId = 1;
+}
+
+message InvalidateAllSessionsResponse {
+    string message = 1;
+}
+
 service AuthService {
     rpc googleLogin(GoogleLoginRequest) returns (GoogleLoginResponse);
     rpc validateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
+    rpc invalidateSession(InvalidateSessionRequest) returns (InvalidateSessionResponse);
+    rpc invalidateAllSessions(InvalidateAllSessionsRequest) returns (InvalidateAllSessionsResponse);
 }

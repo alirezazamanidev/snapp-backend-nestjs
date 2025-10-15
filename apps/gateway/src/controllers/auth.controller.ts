@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
   OnModuleInit,
+  Post,
   Query,
   Req,
   Res,
@@ -19,6 +21,7 @@ import {
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { InvalidateSessionDto } from '../dtos/auth.dto';
 
 @Controller('auth')
 export class AuthController implements OnModuleInit {
@@ -68,5 +71,14 @@ export class AuthController implements OnModuleInit {
       success: true,
     }
   }
-  
+  @Post('invalidate-session')
+  @UseGuards(AuthGuard)
+  invalidateSession(@Body() dto: InvalidateSessionDto) {
+    return lastValueFrom(this.authclientService.invalidateSession(dto));
+  }
+  @Post('invalidate-all-sessions')
+  @UseGuards(AuthGuard)
+  invalidateAllSessions(@Req() req: Request) {
+    return lastValueFrom(this.authclientService.invalidateAllSessions({userId: req.user.userId}));
+  }
 }

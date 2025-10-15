@@ -66,7 +66,22 @@ export class SessionService {
     
   }
   async invalidate(sessionId: string) {
+    if(!sessionId) throw new RpcException({code:401,message:'Session ID is required'});
     await this.redisClient.del(`session:${sessionId}`);
     await this.sessionRepository.update(sessionId, { isActive: false });
+    return {
+        message: 'Session invalidated',
+    }
+  }
+  async invalidateAllSessions(userId: string) {
+    if(!userId) throw new RpcException({code:401,message:'User ID is required'});
+     const sessions = await this.sessionRepository.find({ where: { userId } });
+     for(const session of sessions){
+        await this.redisClient.del(`session:${session.id}`);
+        await this.sessionRepository.update(session.id, { isActive: false });
+     }
+     return {
+        message: 'All sessions invalidated',
+     }
   }
 }
