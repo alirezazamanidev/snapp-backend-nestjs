@@ -66,7 +66,7 @@ export class AuthService {
           .get<GoogleUserProfile>(url, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
+              'Content-Type': 'application/json',
             },
           })
           .pipe(
@@ -113,7 +113,7 @@ export class AuthService {
 
       const response = await lastValueFrom(
         this.httpService
-          .post<GoogleTokenResponse>(tokenUrl, JSON.stringify(requestBody), {
+          .post<GoogleTokenResponse>(tokenUrl, requestBody, {
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
             

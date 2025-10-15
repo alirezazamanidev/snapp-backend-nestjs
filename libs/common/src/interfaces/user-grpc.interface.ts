@@ -1,3 +1,5 @@
+import { Observable } from "rxjs";
+
 export const USER_PACKAGE_NAME = 'user';
 export const USER_SERVICE_NAME = 'UserService';
 export const AUTH_SERVICE_NAME = 'AuthService';
@@ -11,5 +13,5 @@ export interface IGoogleLoginResponse {
     sessionId: string;
 }
 export interface IAuthService {
-    googleLogin(request: IGoogleLoginRequest): IGoogleLoginResponse;
+    googleLogin(request: IGoogleLoginRequest): Observable<IGoogleLoginResponse>;
 }

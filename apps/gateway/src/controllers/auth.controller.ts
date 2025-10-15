@@ -16,6 +16,7 @@ import {
   USER_PACKAGE_NAME,
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 
 @Controller('auth')
 export class AuthController implements OnModuleInit {
@@ -35,11 +36,27 @@ export class AuthController implements OnModuleInit {
     res.redirect(url);
   }
   @Get('google/verify')
-  verifyGoogle(@Query('code') code: string, @Req() req: Request) {
-    return this.authclientService.googleLogin({
-      code,
-      ipAddress: req.ip as string,
-      userAgent: req.headers['user-agent'] as string,
-    });
+  async verifyGoogle(
+    @Query('code') code: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await lastValueFrom(
+      this.authclientService.googleLogin({
+        code,
+        ipAddress: req.ip as string,
+        userAgent: req.headers['user-agent'] as string,
+      }),
+    );
+
+    res.cookie('snapp-session', result.sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: 'lax',
+      path: '/',
+    }).json({
+      message: 'Authentication successful',
+    })
   }
 }
