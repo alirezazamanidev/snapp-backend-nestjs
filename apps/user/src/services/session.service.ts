@@ -16,14 +16,15 @@ export class SessionService {
   ) {}
 
   async create(userId: string, ipAddress: string, userAgent: string) {
-    const session = this.sessionRepository.create({
+    let session = this.sessionRepository.create({
       userId,
       ipAddress,
       isActive: true,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days,
       userAgent,
     });
-    await this.sessionRepository.save(session);
+   session =  await this.sessionRepository.save(session);
+  
     const payload = JSON.stringify({
       userId,
       exp: session.expiresAt.getTime(),
@@ -33,55 +34,73 @@ export class SessionService {
   }
 
   async validate(sessionId: string) {
-    if(!sessionId) throw new RpcException({code:401,message:'Session ID is required'});
+    if (!sessionId)
+      throw new RpcException({ code: 401, message: 'Session ID is required' });
     const cachedSession = await this.redisClient.get(`session:${sessionId}`);
-    if(cachedSession){
-        const session = JSON.parse(cachedSession);
-        await this.redisClient.expire(`session:${sessionId}`, 60 * 30);
-        return {
-            userId: session.userId,
-            sessionId,
-        }
+    if (cachedSession) {
+      const session = JSON.parse(cachedSession);
+    
+      await this.redisClient.expire(`session:${sessionId}`, 60 * 30);
+      return {
+        userId: session.userId,
+        sessionId,
+        role: session?.role,
+      };
     }
     const session = await this.sessionRepository.findOne({
-        where: {
-            id: sessionId,
+      where: {
+        id: sessionId,
+      },
+      relations: ['user'],
+      select: {
+        id: true,
+        expiresAt: true,
+        userId: true,
+        user: {
+          id: true,
+          role: true,
         },
+      },
     });
-    if(!session) throw new RpcException({code:401,message:'Invalid session ID'});
-    if(session.expiresAt < new Date()) {
-        await this.invalidate(sessionId);
-        throw new RpcException({code:401,message:'Session expired'});
+    if (!session)
+      throw new RpcException({ code: 401, message: 'Invalid session ID' });
+    if (session.expiresAt < new Date()) {
+      await this.invalidate(sessionId);
+      throw new RpcException({ code: 401, message: 'Session expired' });
     }
 
     const payload = JSON.stringify({
-        userId: session.userId,
-        exp: session.expiresAt.getTime(),
+      userId: session.userId,
+      role: session.user.role,
+      exp: session.expiresAt.getTime(),
     });
     await this.redisClient.setex(`session:${sessionId}`, 60 * 30, payload);
+
     return {
-        userId: session.userId,
-        sessionId,
-    }
-    
+      userId: session?.userId,
+      sessionId,
+      role: session?.user?.role,
+    };
   }
   async invalidate(sessionId: string) {
-    if(!sessionId) throw new RpcException({code:401,message:'Session ID is required'});
+    if (!sessionId)
+      throw new RpcException({ code: 401, message: 'Session ID is required' });
     await this.redisClient.del(`session:${sessionId}`);
     await this.sessionRepository.update(sessionId, { isActive: false });
     return {
-        message: 'Session invalidated',
-    }
+      message: 'Session invalidated',
+    };
   }
   async invalidateAllSessions(userId: string) {
-    if(!userId) throw new RpcException({code:401,message:'User ID is required'});
-     const sessions = await this.sessionRepository.find({ where: { userId } });
-     for(const session of sessions){
-        await this.redisClient.del(`session:${session.id}`);
-        await this.sessionRepository.update(session.id, { isActive: false });
-     }
-     return {
-        message: 'All sessions invalidated',
-     }
+    if (!userId)
+      throw new RpcException({ code: 401, message: 'User ID is required' });
+    const sessions = await this.sessionRepository.find({ where: { userId } });
+    for (const session of sessions) {
+      await this.redisClient.del(`session:${session.id}`);
+      await this.sessionRepository.update(session.id, { isActive: false });
+    }
+    return {
+      message: 'All sessions invalidated',
+    };
   }
 }

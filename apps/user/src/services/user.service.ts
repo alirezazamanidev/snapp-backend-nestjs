@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UserEntity } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,14 +7,18 @@ import {
   ICreateOrUpdateDriverProfileRequest,
   IUpdateUserRoleRequest,
   type IUpdateUserRoleResponse,
+  REDIS_CLIENT,
   Role,
 } from '@app/common';
 import { DriverProfilesEntity } from '../database/entities/driver-profiles.entity';
 import { RpcException } from '@nestjs/microservices';
+import Redis from 'ioredis';
 
 @Injectable()
 export class UserService {
   constructor(
+    @Inject(REDIS_CLIENT)
+    private readonly redisClient: Redis,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(DriverProfilesEntity)
@@ -39,7 +43,11 @@ export class UserService {
   async updateUserRole(
     dto: IUpdateUserRoleRequest,
   ): Promise<IUpdateUserRoleResponse> {
-    await this.userRepository.update(dto.userId, { role: dto.role as Role });
+    const session = await this.redisClient.get(`session:${dto.sessionId}`);
+    if(!session) throw new RpcException({ code: 401, message: 'Invalid session ID' });
+    const sessionData = JSON.parse(session);
+    await this.userRepository.update(sessionData.userId, { role: dto.role as Role });
+    await this.redisClient.del(`session:${dto.sessionId}`);
     return {
       message: 'User role updated successfully',
     };

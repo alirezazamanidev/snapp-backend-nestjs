@@ -5,3 +5,4 @@ export * from './configs/typeorm.config';
 export * from './abstracts/baseEntity.abstract';
 export * from './enums/role.enum';
 export * from './configs/redis.config';
+export * from './filters/all-exception.filter';

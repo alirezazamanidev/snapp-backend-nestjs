@@ -25,8 +25,6 @@ export class AuthService {
   async googleLogin(
     payload: IGoogleLoginRequest,
   ): Promise<IGoogleLoginResponse> {
-    try {
-    
       if (!payload.code) {
         throw new RpcException({
           code: 400,
@@ -44,21 +42,13 @@ export class AuthService {
         message: 'Authentication successful',
         sessionId,
       };
-    } catch (error) {
-      this.logger.error('Google login failed', error);
-
-
-      throw new RpcException({
-        code: 500,
-        message: 'Internal server error during authentication',
-      });
-    }
+   
   }
 
   private async getGoogleUserProfile(
     accessToken: string,
   ): Promise<GoogleUserProfile> {
-    try {
+    
       const url = 'https://www.googleapis.com/oauth2/v2/userinfo';
 
       const response = await lastValueFrom(
@@ -86,22 +76,10 @@ export class AuthService {
           ),
       );
       return response;
-    } catch (error) {
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
-      this.logger.error('Unexpected error while fetching user profile', error);
-      throw new RpcException({
-        code: 500,
-        message: 'Failed to retrieve user profile',
-      });
-    }
+   
   }
 
   private async verifyGoogleCode(code: string): Promise<string> {
-    try {
-      
       const tokenUrl = 'https://oauth2.googleapis.com/token';
       const requestBody = {
         code,
@@ -149,19 +127,6 @@ export class AuthService {
       }
 
       return response.access_token;
-    } catch (error) {
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
-      this.logger.error(
-        'Unexpected error during Google code verification',
-        error,
-      );
-      throw new RpcException({
-        code: 500,
-        message: 'Failed to verify Google authorization code',
-      });
-    }
+    
   }
 }

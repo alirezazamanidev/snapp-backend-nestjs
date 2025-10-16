@@ -18,6 +18,7 @@ export interface IValidateSessionRequest {
 export interface IValidateSessionResponse {
   userId: string;
   sessionId: string;
+  role: string;
 }
 export interface IInvalidateSessionRequest {
   sessionId: string;
@@ -44,7 +45,7 @@ export interface IAuthService {
   ): Observable<IInvalidateAllSessionsResponse>;
 }
 export interface IUpdateUserRoleRequest {
-  userId: string;
+  sessionId: string;
   role: string;
 }
 export interface IUpdateUserRoleResponse {

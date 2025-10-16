@@ -34,7 +34,7 @@ export class UserController implements OnModuleInit {
   @ApiOperation({ summary: 'Update user role' })
   updateUserRole(@Body() dto: UpdateUserRoleDto, @Req() req: Request) {
     return this.userClientService.updateUserRole({
-      userId: req.user.userId,
+      sessionId: req.user.sessionId,
       role: dto.role,
     });
   }

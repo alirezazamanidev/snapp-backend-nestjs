@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { UserModule } from './user.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { USER_PACKAGE_NAME } from '@app/common';
+import { AllExceptionFilter, USER_PACKAGE_NAME } from '@app/common';
 import { join } from 'path';
 
 async function bootstrap() {
@@ -14,6 +14,7 @@ async function bootstrap() {
     },
   });
 
+  app.useGlobalFilters(new AllExceptionFilter());
   await app.listen()
     .then(() => {
       console.log('✅ User microservice is up and running! 🎉');

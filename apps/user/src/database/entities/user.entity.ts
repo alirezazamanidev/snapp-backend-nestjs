@@ -1,6 +1,7 @@
 import { BaseEntity, Role } from '@app/common';
-import { Column, CreateDateColumn, Entity, OneToOne, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, UpdateDateColumn } from 'typeorm';
 import { DriverProfilesEntity } from './driver-profiles.entity';
+import { SessionEntity } from './session.entity';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
@@ -21,4 +22,6 @@ export class UserEntity extends BaseEntity {
   // relations
   @OneToOne(() => DriverProfilesEntity, (driverProfile) => driverProfile.user)
   driverProfile: DriverProfilesEntity;
+  @OneToMany(() => SessionEntity, (session) => session.user)
+  sessions: SessionEntity[];
 }

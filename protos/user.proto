@@ -19,7 +19,7 @@ message ValidateSessionRequest {
 message ValidateSessionResponse {
     string userId = 1;
     string sessionId = 2;
-
+    string role = 3;
 }
 
 message InvalidateSessionRequest {
@@ -46,7 +46,7 @@ service AuthService {
 }
 
 message UpdateUserRoleRequest {
-    string userId = 1;
+    string sessionId = 1;
     string role = 2;
 }
 

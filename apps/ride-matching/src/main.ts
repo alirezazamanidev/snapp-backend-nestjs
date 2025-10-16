@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { RideMatchingModule } from './ride-matching.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { RIDE_MATCHING_PACKAGE_NAME } from '@app/common';
+import { AllExceptionFilter, RIDE_MATCHING_PACKAGE_NAME } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(RideMatchingModule, {
@@ -14,6 +14,7 @@ async function bootstrap() {
     },
   });
 
+  app.useGlobalFilters(new AllExceptionFilter());
   await app.listen()
     .then(() => {
       console.log('✅ Ride Matching microservice is up and running! 🎉');

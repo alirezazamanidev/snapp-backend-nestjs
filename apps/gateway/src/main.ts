@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { GatewayModule } from './gateway.module';
 import { swaggerConfig } from './configs/swagger.config';
 import cookieParser from 'cookie-parser';
+import { AllExceptionFilter } from './common/filters/allException.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule);
@@ -21,6 +22,8 @@ async function bootstrap() {
     origin: process.env.NODE_ENV === 'production' ? false : true,
     credentials: true,
   });
+  // global exception filter
+  app.useGlobalFilters(new AllExceptionFilter());
   // cookie parser
   app.use(cookieParser());
 

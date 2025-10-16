@@ -9,6 +9,7 @@ import {
   Req,
   Res,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 
 import type { Request, Response } from 'express';
@@ -22,8 +23,10 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { InvalidateSessionDto } from '../dtos/auth.dto';
+import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
 
 @Controller('auth')
+@UseInterceptors(ErrorGrpcInterceptor)
 export class AuthController implements OnModuleInit {
   private authclientService: IAuthService;
   constructor(@Inject(USER_PACKAGE_NAME) private readonly client: ClientGrpc) {}
@@ -36,9 +39,11 @@ export class AuthController implements OnModuleInit {
   @ApiOperation({ summary: 'Redirect to Google OAuth login' })
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
   @Get('google/login')
-  googleLogin(@Res() res: Response) {
+  googleLogin( ) {
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=profile email`;
-    res.redirect(url);
+    return {
+      googleLoginUrl: url,
+    }
   }
   @Get('google/verify')
   async verifyGoogle(
@@ -60,15 +65,14 @@ export class AuthController implements OnModuleInit {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       sameSite: 'lax',
       path: '/',
-    }).json({
-      message: 'Authentication successful',
-    })
+    }).redirect('http://localhost:3000')
   }
   @Get('check-login')
   @UseGuards(AuthGuard)
   checkLogin(@Req() req: Request) {
     return {
       success: true,
+      user: req.user,
     }
   }
   @Post('invalidate-session')

@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { LocationModule } from './location.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { LOCATION_PACKAGE_NAME } from '@app/common/interfaces/location-grpc.interface';
+import { AllExceptionFilter, LOCATION_PACKAGE_NAME } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(LocationModule, {
@@ -13,7 +13,7 @@ async function bootstrap() {
       url: process.env.LOCATION_GRPC_URI,
     },
   });
-
+ app.useGlobalFilters(new AllExceptionFilter());
   await app.listen()
     .then(() => {
       console.log('✅ Location microservice is up and running! 🎉');
