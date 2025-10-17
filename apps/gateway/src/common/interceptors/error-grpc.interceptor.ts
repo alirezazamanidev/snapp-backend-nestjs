@@ -5,15 +5,23 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { catchError, Observable } from 'rxjs';
+import { WsException } from '@nestjs/websockets';
+import { catchError, Observable, throwError } from 'rxjs';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class ErrorGrpcInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler) {
     return next.handle().pipe(
-      catchError((exception) => {
-   
-        throw new HttpException(exception.details, exception.code);
+      catchError((exception: any) => {
+        if (context.getType() === 'http') {
+          throw new HttpException(exception.details, exception.code);
+        } else if (context.getType() === 'ws') {
+          
+          throw new WsException(exception.details);
+          
+        }
+        return throwError(() => exception);
       }),
     );
   }

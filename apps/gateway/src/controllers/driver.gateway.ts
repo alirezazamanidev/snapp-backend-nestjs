@@ -16,6 +16,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { async, lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
@@ -85,16 +86,14 @@ export class DriverGateway
       ?.split('snapp-session=')[1]
       ?.split(';')[0];
     if (!sessionId) {
-      client.emit('error', { message: 'Unauthorized' });
-      return;
+      throw new WsException('Unauthorized');
     }
 
     const result = await lastValueFrom(
       this.authClientService.validateSession({ sessionId: sessionId! }),
     );
     if (!result) {
-      client.emit('error', { message: 'Unauthorized' });
-      return;
+        throw new WsException('Unauthorized');
     }
     client.data.userId = result.userId;
   }

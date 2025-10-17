@@ -12,6 +12,7 @@ import {
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
@@ -114,16 +115,14 @@ export class PassengerGateway
       ?.split('snapp-session=')[1]
       ?.split(';')[0];
     if (!sessionId) {
-      client.emit('error', { message: 'Unauthorized' });
-      return;
+      throw new WsException('Unauthorized');
     }
 
     const result = await lastValueFrom(
       this.authClient.validateSession({ sessionId: sessionId! }),
     );
     if (!result) {
-      client.emit('error', { message: 'Unauthorized' });
-      return;
+      throw new WsException('Unauthorized');
     }
     client.data.userId = result.userId;
   }
