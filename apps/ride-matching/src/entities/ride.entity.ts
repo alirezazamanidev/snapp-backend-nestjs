@@ -1,4 +1,4 @@
-import { BaseEntity } from "@app/common";
+import { BaseEntity, type LatLng } from "@app/common";
 import { Column, CreateDateColumn, Entity, UpdateDateColumn } from "typeorm";
 import { RideStatus } from "../enums/ride-status.enum";
 
@@ -9,9 +9,9 @@ export class RideEntity extends BaseEntity {
     @Column({nullable:true})
     driverId: string;
     @Column({type: 'jsonb'})
-    pickupLocation: Record<string, number>;
+    pickupLocation: LatLng
     @Column({type: 'jsonb'})
-    destinationLocation: Record<string, number>;
+    destinationLocation: LatLng;
 
     @Column({type: 'enum', enum: RideStatus,default: RideStatus.REQUESTED})
     status: string;

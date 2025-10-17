@@ -1,5 +1,6 @@
 import {
   LOCATION_PACKAGE_NAME,
+  NOTIFICATION_QUEUE_NAME,
   RIDE_MATCHING_PACKAGE_NAME,
   USER_PACKAGE_NAME,
 } from '@app/common';
@@ -25,6 +26,17 @@ const clientConfig: ClientProviderOptions[] = [
       url: process.env.LOCATION_GRPC_URI,
     },
   },
+  {
+    name :'NOTIFICATION_SERVICE',
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env.RABBITMQ_URI as string],
+      queue: NOTIFICATION_QUEUE_NAME,
+      queueOptions: {
+        durable: false,
+      },
+    },
+  }
 ];
 
 @Global()

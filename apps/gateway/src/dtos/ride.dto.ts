@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+
 import { IsNotEmpty, IsString } from "class-validator";
 
 export class RequestRideDto {
@@ -10,4 +10,13 @@ export class RequestRideDto {
     @IsNotEmpty()
     @IsString()
     destinationLocation: string
+}
+export class CalculateRideDto {
+  @IsNotEmpty()
+  @IsString()
+  pickupLocation: string
+
+  @IsNotEmpty()
+  @IsString()
+  destinationLocation: string
 }

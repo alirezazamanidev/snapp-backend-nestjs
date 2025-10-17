@@ -3,18 +3,30 @@ package ride_matching;
 import "location.proto";
 service RideMatchingService {
     rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
+    rpc calcultateRide(CalculateRideRequest) returns (CalculateRideResponse);
 }
 
+message LatLng {
+    double lng = 1;
+    double lat = 2;
+}
+
+message CalculateRideRequest {
+    LatLng pickupLocation = 1;
+    LatLng destinationLocation = 2;
+}
+message CalculateRideResponse {
+    double distance = 1;
+    double duration = 2;
+    double price = 3;
+    repeated LatLng routeCoordinates = 4;
+}
 message RequestRideRequest {
     string userId = 1;
-    map<string, double> pickupLocation = 2;
-    map<string, double> destinationLocation = 3;
+    LatLng pickupLocation = 2;
+    LatLng destinationLocation = 3;
 }
 
 message RequestRideResponse {
-    string rideId = 1;
-    map<string, double> pickupLocation = 2;
-    map<string, double> destinationLocation = 3;
-    double ridePrice = 4;
-    repeated Driver nearbyDrivers = 5;
+    string message = 1;
 }

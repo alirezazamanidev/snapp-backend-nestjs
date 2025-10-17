@@ -1,13 +1,12 @@
-
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server, ServerOptions } from 'socket.io';
-import { createClient, RedisClientType } from 'redis';
+import Redis from 'ioredis';
 import { createAdapter } from '@socket.io/redis-adapter';
 
 export class RedisIoAdapter extends IoAdapter {
-  private pubClient: RedisClientType;
-  private subClient: RedisClientType;
+  private pubClient: Redis;
+  private subClient: Redis;
   private logger = new Logger(RedisIoAdapter.name);
 
   constructor(
@@ -22,16 +21,24 @@ export class RedisIoAdapter extends IoAdapter {
     const server = super.createIOServer(port, options);
 
     // ساخت client های Redis
-    this.pubClient = createClient({ url: this.redisUrl });
-    this.subClient = this.pubClient.duplicate();
+    this.pubClient = new Redis(this.redisUrl);
+    this.subClient = new Redis(this.redisUrl);
     server.adapter(createAdapter(this.pubClient, this.subClient));
     this.logger.log('✅ Redis adapter attached to Socket.io server');
 
-    this.pubClient.connect().catch((err) => {
+    this.pubClient.on('connect', () => {
+      this.logger.log('✅ PubClient connected to Redis');
+    });
+
+    this.pubClient.on('error', (err) => {
       this.logger.error('❌ Failed to connect pubClient to Redis', err);
     });
 
-    this.subClient.connect().catch((err) => {
+    this.subClient.on('connect', () => {
+      this.logger.log('✅ SubClient connected to Redis');
+    });
+
+    this.subClient.on('error', (err) => {
       this.logger.error('❌ Failed to connect subClient to Redis', err);
     });
 

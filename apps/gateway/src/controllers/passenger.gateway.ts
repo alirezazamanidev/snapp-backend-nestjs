@@ -24,7 +24,7 @@ import {
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-import { RequestRideDto } from '../dtos/ride.dto';
+import { CalculateRideDto, RequestRideDto } from '../dtos/ride.dto';
 import { DriverGateway } from './driver.gateway';
 
 @WebSocketGateway(8002, {
@@ -75,38 +75,39 @@ export class PassengerGateway
   }
 
   @SubscribeMessage('request-ride')
-  async requestRide(client: Socket, @MessageBody() payload: RequestRideDto) {
+  async requestRide(@ConnectedSocket() client: Socket, @MessageBody() payload: RequestRideDto) {
     const {pickupLocation, destinationLocation} = payload;
     const [pickupLatitude, pickupLongitude] = pickupLocation.split(',');
     const [destinationLatitude, destinationLongitude] = destinationLocation.split(',');
-    const ride = await lastValueFrom(this.rideMatchingClient.requestRide({
+
+    return await lastValueFrom(this.rideMatchingClient.requestRide({
       userId: client.data.userId,
       pickupLocation: {
-        latitude: parseFloat(pickupLatitude),
-        longitude: parseFloat(pickupLongitude),
+        lng: parseFloat(pickupLatitude),
+        lat: parseFloat(pickupLongitude),
       },
       destinationLocation: {
-        latitude: parseFloat(destinationLatitude),
-        longitude: parseFloat(destinationLongitude),
+        lng: parseFloat(destinationLatitude),
+        lat: parseFloat(destinationLongitude),
       },
     }));
-
-    for (const driver of ride.nearbyDrivers) {
-      this.driverGateway.server.to(`driver:${driver.driverId}`).emit('ride-requested', {
-        pickupLocation: {
-          latitude: pickupLatitude,
-          longitude: pickupLongitude,
-        },
-        destinationLocation: {
-          latitude: destinationLatitude,
-          longitude: destinationLongitude,
-        },
-        ridePrice: ride.ridePrice,
-
-      });
-    }
   }
-
+  @SubscribeMessage('calculate-ride')
+  async calculateRide(@ConnectedSocket() client: Socket, @MessageBody() payload: CalculateRideDto) {
+    const {pickupLocation, destinationLocation} = payload;
+    const [pickupLatitude, pickupLongitude] = pickupLocation.split(',');
+    const [destinationLatitude, destinationLongitude] = destinationLocation.split(',');
+    return await lastValueFrom(this.rideMatchingClient.calcultateRide({
+      pickupLocation: {
+          lng: parseFloat(pickupLatitude),
+        lat: parseFloat(pickupLongitude),
+      },
+      destinationLocation: {
+        lng: parseFloat(destinationLatitude),
+        lat: parseFloat(destinationLongitude),
+      },
+    }));
+  }
   private async authenticate(client: Socket) {
     // auth
     const sessionId = client.request.headers.cookie

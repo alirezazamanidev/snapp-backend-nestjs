@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmDbConfig } from '@app/common';
 import { RideEntity } from './entities/ride.entity';
 import { ClientConfigModule } from './configs/client.config';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -19,6 +20,10 @@ import { ClientConfigModule } from './configs/client.config';
     }),
     TypeOrmModule.forFeature([RideEntity]),
     ClientConfigModule,
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 5,
+    })
   ],
   controllers: [RideMatchingController],
   providers: [RideMatchingService],
