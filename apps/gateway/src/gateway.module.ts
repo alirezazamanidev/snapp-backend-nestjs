@@ -5,7 +5,8 @@ import { ClientConfigModule } from './configs/client.config';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
 import { LocationController } from './controllers/location.controller';
-import { RideController } from './controllers/ride.controller';
+import { PassengerGateway } from './controllers/passenger.gateway';
+import { DriverGateway } from './controllers/driver.gateway';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,7 +15,7 @@ import { RideController } from './controllers/ride.controller';
     }),
     ClientConfigModule,
   ],
-
-  controllers: [AuthController, UserController, LocationController, RideController],
+  providers: [PassengerGateway, DriverGateway],
+  controllers: [AuthController, UserController, LocationController],
 })
 export class GatewayModule {}

@@ -4,6 +4,7 @@ import { GatewayModule } from './gateway.module';
 import { swaggerConfig } from './configs/swagger.config';
 import cookieParser from 'cookie-parser';
 import { AllExceptionFilter } from './common/filters/allException.filter';
+import { RedisIoAdapter } from './adapters/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule);
@@ -26,7 +27,8 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionFilter());
   // cookie parser
   app.use(cookieParser());
-
+  // redis io adapter
+  app.useWebSocketAdapter(new RedisIoAdapter(app));
   // Global prefix
   app.setGlobalPrefix('api');
 

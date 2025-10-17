@@ -1,4 +1,5 @@
 import { Observable } from "rxjs";
+import { Driver } from "./location-grpc.interface";
 
 export const RIDE_MATCHING_PACKAGE_NAME = 'ride_matching';
 export const RIDE_MATCHING_SERVICE_NAME = 'RideMatchingService';
@@ -10,7 +11,12 @@ export interface IRequestRideRequest {
 }
 
 export interface IRequestRideResponse {
-    message: string;
+    
+    rideId: string;
+    pickupLocation: Record<string, number>;
+    destinationLocation: Record<string, number>;
+    ridePrice: number;
+    nearbyDrivers:Driver[];
 }
 
 

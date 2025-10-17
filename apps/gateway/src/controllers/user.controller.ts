@@ -28,7 +28,7 @@ export class UserController implements OnModuleInit {
     this.userClientService =
       this.client.getService<IUserService>(USER_SERVICE_NAME);
   }
-  @Patch('update-user-role')
+  @Patch('select-role')
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Update user role' })

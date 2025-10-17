@@ -1,6 +1,6 @@
 syntax = "proto3";
 package ride_matching;
-
+import "location.proto";
 service RideMatchingService {
     rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
 }
@@ -12,5 +12,9 @@ message RequestRideRequest {
 }
 
 message RequestRideResponse {
-    string message = 1;
+    string rideId = 1;
+    map<string, double> pickupLocation = 2;
+    map<string, double> destinationLocation = 3;
+    double ridePrice = 4;
+    repeated Driver nearbyDrivers = 5;
 }
