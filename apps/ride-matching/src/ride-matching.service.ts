@@ -68,6 +68,7 @@ export class RideMatchingService implements OnModuleInit {
     });
     this.notificationClient.emit('ride.requested', {
       rideId: ride.id,
+      userId,
       pickupLocation: ride.pickupLocation,
       destinationLocation: ride.destinationLocation,
       ridePrice: ride.price,

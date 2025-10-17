@@ -65,7 +65,18 @@ message CreateOrUpdateDriverProfileResponse {
     string message = 1;
 }
 
+message GetProfileRequest {
+    string userId = 1;
+}
+
+message GetProfileResponse {
+    string id = 1;
+    string fullname = 2;
+    string email = 3;
+    string avatarUrl = 4;
+}
 service UserService {
     rpc updateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
     rpc createOrUpdateDriverProfile(CreateOrUpdateDriverProfileRequest) returns (CreateOrUpdateDriverProfileResponse);
+    rpc getProfile(GetProfileRequest) returns (GetProfileResponse);
 }

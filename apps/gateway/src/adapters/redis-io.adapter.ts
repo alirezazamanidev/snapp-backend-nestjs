@@ -23,7 +23,9 @@ export class RedisIoAdapter extends IoAdapter {
     // ساخت client های Redis
     this.pubClient = new Redis(this.redisUrl);
     this.subClient = new Redis(this.redisUrl);
-    server.adapter(createAdapter(this.pubClient, this.subClient));
+    server.adapter(createAdapter(this.pubClient, this.subClient),{
+        key:'snapp'
+    });
     this.logger.log('✅ Redis adapter attached to Socket.io server');
 
     this.pubClient.on('connect', () => {

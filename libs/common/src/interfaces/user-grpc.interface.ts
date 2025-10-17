@@ -61,7 +61,17 @@ export interface ICreateOrUpdateDriverProfileRequest {
 export interface ICreateOrUpdateDriverProfileResponse {
   message: string;
 }
+export interface IGetProfileRequest {
+  userId: string;
+}
+export interface IGetProfileResponse {
+  id: string;
+  fullname: string;
+  email: string;
+  avatarUrl: string;
+}
 export interface IUserService {
+  getProfile(request: IGetProfileRequest): Promise<IGetProfileResponse>;
   updateUserRole(
     request: IUpdateUserRoleRequest,
   ): Promise<IUpdateUserRoleResponse>;

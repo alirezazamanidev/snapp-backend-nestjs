@@ -19,108 +19,107 @@ export class LocationService {
   ) {}
 
   async updateLocation(dto: IUpdateLocationRequest) {
-    await this.redisClient.geoadd(
-      this.GEO_KEY,
-      dto.longitude,
-      dto.latitude,
-      dto.userId,
-    );
+    const now = Date.now().toString();
+  
+    // 1. اضافه کردن یا بروزرسانی موقعیت در GEO
+    await this.redisClient.geoadd(this.GEO_KEY, dto.longitude, dto.latitude, dto.userId);
+  
+    // 2. بروزرسانی lastSeen و status در یک دستور
     await this.redisClient.hset(
       `driver:status:${dto.userId}`,
-      'lastSeen',
-      String(Date.now()),
+      {
+        lastSeen: now,
+        status: (await this.redisClient.hget(`driver:status:${dto.userId}`, 'status')) || 'online',
+      }
     );
-    const status = await this.redisClient.hget(
-      `driver:status:${dto.userId}`,
-      'status',
-    );
-    if (!status) {
-      await this.redisClient.hset(
-        `driver:status:${dto.userId}`,
-        'status',
-        'online',
-      );
-    }
+  
+    // 3. انتشار پیام location update
     await this.redisClient.publish(
       'channel:location_updates',
       JSON.stringify({
         driverId: dto.userId,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        timestamp: String(Date.now()),
-      }),
+        lat: dto.latitude,
+        lng: dto.longitude,
+        timestamp: now,
+      })
     );
+  
     return {
+      success: true,
       message: 'Location updated successfully',
     };
   }
-
   async getNearbyDrivers(dto: IGetNearbyDriversRequest) {
     const { latitude, longitude, radius } = dto;
-
-    const results = await this.redisClient.georadius(
+  
+    // 1. جستجوی راننده‌ها در شعاع مشخص
+    const results = await this.redisClient.geosearch(
       this.GEO_KEY,
-      parseFloat(longitude),
-      parseFloat(latitude),
-      radius,
+      'FROMLONLAT',
+      longitude.toString(),
+      latitude.toString(),
+      'BYRADIUS',
+      radius.toString(),
       'km',
       'WITHDIST',
       'COUNT',
-      10,
-      'ASC',
-    ) as [string, string][];
-
-    if (!results || results.length === 0) {
-      return {
-        drivers: [],
-    
-      };
+      '10',
+      'ASC'
+    ) as [string, string][]; // [driverId, distance]
+  
+    if (!results?.length) {
+      return { drivers: [] };
     }
-
+  
     const drivers: Driver[] = [];
     const pipeline = this.redisClient.pipeline();
-
-    results.forEach(([member]) => {
-      pipeline.hget(`driver:status:${member}`, 'status');
-      pipeline.geopos(this.GEO_KEY, member);
-    });
-
-    const responses = await pipeline.exec();
-
-    if (!responses) {
-      return {
-        drivers: [],
-      };
+  
+    // 2. ایجاد pipeline برای گرفتن status و موقعیت دقیق راننده‌ها
+    for (const [driverId] of results) {
+      pipeline.hget(`driver:status:${driverId}`, 'status');
+      pipeline.geopos(this.GEO_KEY, driverId);
     }
-
+  
+    const responses = await pipeline.exec();
+  
+    if (!responses?.length) {
+      return { drivers: [] };
+    }
+  
+    // 3. پردازش نتایج pipeline
     for (let i = 0; i < results.length; i++) {
-      const [member, dist] = results[i];
+      const [driverId, distStr] = results[i];
       const statusResponse = responses[i * 2];
       const posResponse = responses[i * 2 + 1];
-
+  
+      // بررسی خطا در هر عملیات
       if (!statusResponse || !posResponse || statusResponse[0] || posResponse[0]) {
         continue;
       }
-
+  
       const status = statusResponse[1] as string;
-      const position = posResponse[1] as [string, string][];
-
-      if (status && this.validStatuses.includes(status) && status !== 'offline') {
-        if (position && position[0]) {
-          const [lngPos, latPos] = position[0];
-          drivers.push({
-            driverId: member,
-            lat: parseFloat(latPos),
-            lng: parseFloat(lngPos),
-            distance: parseFloat(dist),
-            status: status,
-          });
-        }
+      const positions = posResponse[1] as [string, string][]; // [[lng, lat]]
+  
+      if (!status || !this.validStatuses.includes(status) || status === 'offline') {
+        continue;
       }
+  
+      if (!positions?.[0]) {
+        continue;
+      }
+  
+      const [lngPos, latPos] = positions[0];
+  
+      drivers.push({
+        driverId,
+        lat: parseFloat(latPos),
+        lng: parseFloat(lngPos),
+        distance: parseFloat(distStr),
+        status,
+      });
     }
-    return {
-      drivers,
-      
-    };
+  
+    return { drivers };
   }
+  
 }

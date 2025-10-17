@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GoogleUserProfile } from '../common/interfaces/google-auth.interface';
 import {
   ICreateOrUpdateDriverProfileRequest,
+  IGetProfileRequest,
   IUpdateUserRoleRequest,
   type IUpdateUserRoleResponse,
   REDIS_CLIENT,
@@ -72,6 +73,18 @@ export class UserService {
     }
     return {
       message: 'Driver profile created successfully',
+    };
+  }
+  async getProfile(payload: IGetProfileRequest) {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.userId },
+    });
+    if (!user) throw new RpcException({ code: 404, message: 'User not found' });
+    return {
+      id: user.id,
+      fullname: user.fullname,
+      email: user.email || '',
+      avatarUrl: user.avatarUrl || '',
     };
   }
 }
