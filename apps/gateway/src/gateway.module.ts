@@ -7,6 +7,7 @@ import { UserController } from './controllers/user.controller';
 import { LocationController } from './controllers/location.controller';
 import { PassengerGateway } from './controllers/passenger.gateway';
 import { DriverGateway } from './controllers/driver.gateway';
+import { RedisModule } from '@app/common';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +15,7 @@ import { DriverGateway } from './controllers/driver.gateway';
       envFilePath: join(process.cwd(), '.env'),
     }),
     ClientConfigModule,
+    RedisModule.forRoot(process.env.REDIS_URL as string),
   ],
   providers: [PassengerGateway, DriverGateway],
   controllers: [AuthController, UserController, LocationController],

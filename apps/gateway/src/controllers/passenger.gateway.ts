@@ -3,6 +3,8 @@ import {
   Logger,
   OnModuleInit,
   UnauthorizedException,
+  UseFilters,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   WebSocketGateway,
@@ -27,6 +29,8 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { CalculateRideDto, RequestRideDto } from '../dtos/ride.dto';
 import { DriverGateway } from './driver.gateway';
+import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
+import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
 
 @WebSocketGateway(8002, {
   namespace: 'passenger',
@@ -36,6 +40,8 @@ import { DriverGateway } from './driver.gateway';
     credentials: true,
   },
 })
+@UseFilters(WsExceptionFilter)
+@UseInterceptors(ErrorGrpcInterceptor)
 export class PassengerGateway
   implements OnModuleInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -78,18 +84,17 @@ export class PassengerGateway
   @SubscribeMessage('request-ride')
   async requestRide(@ConnectedSocket() client: Socket, @MessageBody() payload: RequestRideDto) {
     const {pickupLocation, destinationLocation} = payload;
-    const [pickupLatitude, pickupLongitude] = pickupLocation.split(',');
-    const [destinationLatitude, destinationLongitude] = destinationLocation.split(',');
-
+    const [plat,plng] = pickupLocation.split(',');
+    const [dlat,dlng] = destinationLocation.split(',');
     return await lastValueFrom(this.rideMatchingClient.requestRide({
       userId: client.data.userId,
       pickupLocation: {
-        lng: parseFloat(pickupLatitude),
-        lat: parseFloat(pickupLongitude),
+        lat: parseFloat(plat),
+        lng: parseFloat(plng),
       },
       destinationLocation: {
-        lng: parseFloat(destinationLatitude),
-        lat: parseFloat(destinationLongitude),
+        lat: parseFloat(dlat),
+        lng: parseFloat(dlng),
       },
     }));
   }

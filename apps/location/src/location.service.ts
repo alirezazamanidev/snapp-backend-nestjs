@@ -1,5 +1,4 @@
 import {
-  Driver,
   IGetNearbyDriversRequest,
   IUpdateLocationRequest,
   REDIS_CLIENT,
@@ -7,11 +6,10 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-
 @Injectable()
 export class LocationService {
   private GEO_KEY = 'drivers:geo';
-  private readonly validStatuses = ['online', 'busy', 'offline'];
+  private readonly validStatuses = ['online', 'busy'];
 
   constructor(
     @Inject(REDIS_CLIENT)
@@ -20,106 +18,42 @@ export class LocationService {
 
   async updateLocation(dto: IUpdateLocationRequest) {
     const now = Date.now().toString();
-  
-    // 1. اضافه کردن یا بروزرسانی موقعیت در GEO
+    const hashKey = `driver:status:${dto.userId}`;
+    
     await this.redisClient.geoadd(this.GEO_KEY, dto.longitude, dto.latitude, dto.userId);
-  
-    // 2. بروزرسانی lastSeen و status در یک دستور
-    await this.redisClient.hset(
-      `driver:status:${dto.userId}`,
-      {
-        lastSeen: now,
-        status: (await this.redisClient.hget(`driver:status:${dto.userId}`, 'status')) || 'online',
-      }
-    );
-  
-    // 3. انتشار پیام location update
-    await this.redisClient.publish(
-      'channel:location_updates',
-      JSON.stringify({
-        driverId: dto.userId,
-        lat: dto.latitude,
-        lng: dto.longitude,
-        timestamp: now,
-      })
-    );
-  
+
+    await this.redisClient.hset(hashKey, 'status', 'online', 'lastSeen', now);
+
     return {
-      success: true,
       message: 'Location updated successfully',
     };
   }
+
   async getNearbyDrivers(dto: IGetNearbyDriversRequest) {
     const { latitude, longitude, radius } = dto;
   
-    // 1. جستجوی راننده‌ها در شعاع مشخص
-    const results = await this.redisClient.geosearch(
-      this.GEO_KEY,
-      'FROMLONLAT',
-      longitude.toString(),
-      latitude.toString(),
-      'BYRADIUS',
-      radius.toString(),
-      'km',
-      'WITHDIST',
-      'COUNT',
-      '10',
-      'ASC'
-    ) as [string, string][]; // [driverId, distance]
-  
-    if (!results?.length) {
-      return { drivers: [] };
-    }
-  
-    const drivers: Driver[] = [];
-    const pipeline = this.redisClient.pipeline();
-  
-    // 2. ایجاد pipeline برای گرفتن status و موقعیت دقیق راننده‌ها
-    for (const [driverId] of results) {
-      pipeline.hget(`driver:status:${driverId}`, 'status');
-      pipeline.geopos(this.GEO_KEY, driverId);
-    }
-  
-    const responses = await pipeline.exec();
-  
-    if (!responses?.length) {
-      return { drivers: [] };
-    }
-  
-    // 3. پردازش نتایج pipeline
-    for (let i = 0; i < results.length; i++) {
-      const [driverId, distStr] = results[i];
-      const statusResponse = responses[i * 2];
-      const posResponse = responses[i * 2 + 1];
-  
-      // بررسی خطا در هر عملیات
-      if (!statusResponse || !posResponse || statusResponse[0] || posResponse[0]) {
-        continue;
+      const nearbyResults = await this.redisClient.georadius(
+        this.GEO_KEY,
+        longitude.toString(),
+        latitude.toString(),
+        radius.toString(),
+        'km',
+        'WITHCOORD',
+        'WITHDIST',
+        'COUNT',
+        '50',
+        'ASC'
+      ) as [string, string, [string, string]][];
+      if (!nearbyResults || nearbyResults.length === 0) {
+        return { driverIds: [] };
       }
-  
-      const status = statusResponse[1] as string;
-      const positions = posResponse[1] as [string, string][]; // [[lng, lat]]
-  
-      if (!status || !this.validStatuses.includes(status) || status === 'offline') {
-        continue;
+      const driverIds: string[] = [];
+      for (const [driverId] of nearbyResults) {
+        driverIds.push(driverId);
       }
+      console.log(driverIds);
+      return { driverIds };
   
-      if (!positions?.[0]) {
-        continue;
-      }
   
-      const [lngPos, latPos] = positions[0];
-  
-      drivers.push({
-        driverId,
-        lat: parseFloat(latPos),
-        lng: parseFloat(lngPos),
-        distance: parseFloat(distStr),
-        status,
-      });
-    }
-  
-    return { drivers };
   }
-  
 }

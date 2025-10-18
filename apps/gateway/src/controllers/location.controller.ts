@@ -6,11 +6,6 @@ import {
 import { Body, Controller, Inject, OnModuleInit, Post, Req, UseGuards } from '@nestjs/common';
 
 import type { ClientGrpc } from '@nestjs/microservices';
-import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { GetNearbyDriversDto, UpdateLocationDto } from '../dtos/location.dto';
-import type{ Request } from 'express';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { SwaggerConsumes } from '../common/enums/swagger.enum';
 
 @Controller('location')
 export class LocationController implements OnModuleInit {
@@ -23,15 +18,5 @@ export class LocationController implements OnModuleInit {
       LOCATION_SERVICE_NAME,
     );
   }
-  @ApiOperation({ summary: 'update location' })
-  @Post('update')
-  @UseGuards(AuthGuard)
-  @ApiConsumes(SwaggerConsumes.URL_ENCODED,SwaggerConsumes.JSON)
-  async updateLocation(@Body() dto: UpdateLocationDto, @Req() req: Request) {
-    return this.locationClientService.updateLocation({
-      userId: req.user.userId,
-      ...dto
-    });
-  }
-  
+
 }

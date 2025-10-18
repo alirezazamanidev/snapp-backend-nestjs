@@ -18,6 +18,7 @@ export interface IRequestRideResponse {
 export interface IRideMatchingService {
     requestRide(request: IRequestRideRequest): Observable<IRequestRideResponse>;
     calcultateRide(request: ICalculateRideRequest): Observable<ICalculateRideResponse>;
+    getRideDetails(request: IGetRideDetailsRequest): Observable<IGetRideDetailsResponse>;
 }   
 
 export interface ICalculateRideRequest {
@@ -30,4 +31,19 @@ export interface ICalculateRideResponse {
     duration: number;
     price: number;
     routeCoordinates: LatLng[];
+}
+
+export interface IGetRideDetailsRequest {
+    rideId: string;
+}
+export interface IGetRideDetailsResponse {
+    ride: IRide;
+}
+
+export interface IRide {
+    id: string;
+    status: string;
+    price: number;
+    pickupLocation: LatLng;
+    destinationLocation: LatLng;
 }

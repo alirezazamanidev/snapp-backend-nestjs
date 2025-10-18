@@ -8,26 +8,19 @@ service LocationService {
 
 message UpdateLocationRequest {
     string userId = 1;
-    string latitude = 2;
-    string longitude = 3;
+    double latitude = 2;
+    double longitude = 3;
 }
 message UpdateLocationResponse {
     string message = 1;
 }
 
 message GetNearbyDriversRequest {
-    string latitude = 1;
-    string longitude = 2;
-    string radius = 3;
+    double latitude = 1;
+    double longitude = 2;
+    double radius = 3;
 }
 
-message Driver {
-    string driverId = 1;
-    string lat = 2;
-    string lng = 3;
-    double distance = 4;
-    string status = 5;
-}
 message GetNearbyDriversResponse {
-  repeated Driver drivers = 1;
+  repeated string driverIds = 1;
 }

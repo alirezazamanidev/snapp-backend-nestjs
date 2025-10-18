@@ -4,15 +4,23 @@ import {
   ILocationService,
   LOCATION_PACKAGE_NAME,
   LOCATION_SERVICE_NAME,
+  REDIS_CLIENT,
   USER_PACKAGE_NAME,
 } from '@app/common';
-import { Inject, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Logger,
+  OnModuleInit,
+  UseFilters,
+  UseInterceptors,
+} from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import {
-    ConnectedSocket,
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -21,6 +29,9 @@ import {
 import { async, lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateLocationDto } from '../dtos/location.dto';
+import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
+import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
+import Redis from 'ioredis';
 
 @WebSocketGateway(8002, {
   namespace: 'driver',
@@ -30,13 +41,21 @@ import { UpdateLocationDto } from '../dtos/location.dto';
     credentials: true,
   },
 })
+@UseFilters(WsExceptionFilter)
+@UseInterceptors(ErrorGrpcInterceptor)
 export class DriverGateway
-  implements OnModuleInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnModuleInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnGatewayInit
 {
   private readonly logger = new Logger(DriverGateway.name);
   private authClientService: IAuthService;
   private locationClientService: ILocationService;
+
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     @Inject(USER_PACKAGE_NAME) private readonly AuthClient: ClientGrpc,
     @Inject(LOCATION_PACKAGE_NAME) private readonly LocationClient: ClientGrpc,
   ) {}
@@ -49,10 +68,30 @@ export class DriverGateway
     this.locationClientService =
       this.LocationClient.getService<ILocationService>(LOCATION_SERVICE_NAME);
   }
+  afterInit() {
+    this.redisClient.subscribe('ride.requested', (err, count) => {
+      if (err) {
+        this.logger.error(err);
+      }
+      this.redisClient.on('message', (channel, message) => {
+        const payload = JSON.parse(message);
+        if (channel === 'ride.requested') {
+          for (const driverId of payload.driverIds) {
+            this.server
+              .to(`driver:${driverId}`)
+              .emit('ride.requested', {
+                ride: payload.ride,
+                user: payload.user,
+                });
+          }
+        }
+      });
+    });
+  }
 
   async handleConnection(client: Socket) {
     await this.authenticate(client);
-  
+
     client.join(`driver:${client.data.userId}`);
     this.logger.log(
       `Client connected: ${client.id} user id: ${client.data.userId}`,
@@ -71,13 +110,11 @@ export class DriverGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: UpdateLocationDto,
   ) {
-
-    return this.locationClientService.updateLocation({
+    return await this.locationClientService.updateLocation({
       userId: client.data.userId,
       latitude: payload.latitude,
       longitude: payload.longitude,
     });
-    
   }
 
   private async authenticate(client: Socket) {
@@ -93,7 +130,7 @@ export class DriverGateway
       this.authClientService.validateSession({ sessionId: sessionId! }),
     );
     if (!result) {
-        throw new WsException('Unauthorized');
+      throw new WsException('Unauthorized');
     }
     client.data.userId = result.userId;
   }

@@ -71,7 +71,7 @@ export interface IGetProfileResponse {
   avatarUrl: string;
 }
 export interface IUserService {
-  getProfile(request: IGetProfileRequest): Promise<IGetProfileResponse>;
+  getProfile(request: IGetProfileRequest): Observable<IGetProfileResponse>;
   updateUserRole(
     request: IUpdateUserRoleRequest,
   ): Promise<IUpdateUserRoleResponse>;

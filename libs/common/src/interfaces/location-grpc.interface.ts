@@ -1,34 +1,30 @@
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
 
 export interface IUpdateLocationRequest {
-    userId: string;
-    latitude: string;
-    longitude: string;
+  userId: string;
+  latitude: number;
+  longitude: number;
 }
 export interface IUpdateLocationResponse {
-    message: string;
+  message: string;
 }
 export interface IGetNearbyDriversRequest {
-    latitude: string;
-    longitude: string;
-    radius: number;
+  latitude: number;
+  longitude: number;
+  radius: number;
 }
 export interface IGetNearbyDriversResponse {
-    drivers: Driver[];
-   
+  driverIds: string[];
 }
 
-export interface Driver {
-    driverId: string;
-    lat: number;
-    lng: number;
-    distance: number;
-    status: string;
-  }
 export const LOCATION_PACKAGE_NAME = 'location';
 export const LOCATION_SERVICE_NAME = 'LocationService';
 
 export interface ILocationService {
-    updateLocation(request: IUpdateLocationRequest): Promise<IUpdateLocationResponse>;
-    getNearbyDrivers(request: IGetNearbyDriversRequest): Promise<IGetNearbyDriversResponse>;
+  updateLocation(
+    request: IUpdateLocationRequest,
+  ): Promise<IUpdateLocationResponse>;
+  getNearbyDrivers(
+    request: IGetNearbyDriversRequest,
+  ): Observable<IGetNearbyDriversResponse>;
 }

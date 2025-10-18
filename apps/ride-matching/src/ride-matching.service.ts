@@ -61,18 +61,17 @@ export class RideMatchingService implements OnModuleInit {
     await this.rideRepository.save(ride);
 
     // get nearby drivers
-    const { drivers } = await this.locationClient.getNearbyDrivers({
-      latitude: pickupLocation.lat.toString(),
-      longitude: pickupLocation.lng.toString(),
+    const {driverIds} = await lastValueFrom(this.locationClient.getNearbyDrivers({
+      latitude: pickupLocation.lat,
+      longitude: pickupLocation.lng,
       radius: 10,
-    });
+    }));
+    console.log(driverIds);
+    
     this.notificationClient.emit('ride.requested', {
       rideId: ride.id,
       userId,
-      pickupLocation: ride.pickupLocation,
-      destinationLocation: ride.destinationLocation,
-      ridePrice: ride.price,
-      nearbyDrivers: drivers,
+      driverIds,
     });
 
     return {
@@ -100,7 +99,7 @@ export class RideMatchingService implements OnModuleInit {
           .pipe(
             map((res) => res.data),
             catchError((error) => {
-              console.error('OpenRouteService API error:', error.response?.data || error.message);
+            
               throw new RpcException({
                 code: 500,
                 message: 'Failed to calculate ride',
@@ -151,11 +150,28 @@ export class RideMatchingService implements OnModuleInit {
         })),
       };
     } catch (error) {
-      console.error('Calculate ride error:', error);
+       console.log(error);
       throw new RpcException({
         code: 500,
         message: 'Failed to calculate ride',
       });
+    }
+  }
+  async getRideDetails(rideId: string) {
+    const ride = await this.rideRepository.findOne({
+      where: {
+        id: rideId,
+      },
+      select:['id','status','price','pickupLocation','destinationLocation']
+    });
+    if (!ride) {
+      throw new RpcException({
+        code: 404,
+        message: 'Ride not found',
+      });
+    }
+    return {
+      ride
     }
   }
 }

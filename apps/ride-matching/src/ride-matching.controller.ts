@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { RideMatchingService } from './ride-matching.service';
 import { GrpcMethod } from '@nestjs/microservices';
-import { type ICalculateRideRequest, type IRequestRideRequest, RIDE_MATCHING_SERVICE_NAME } from '@app/common';
+import { type ICalculateRideRequest, type IGetRideDetailsRequest, type IRequestRideRequest, RIDE_MATCHING_SERVICE_NAME } from '@app/common';
 
 @Controller()
 export class RideMatchingController {
@@ -15,5 +15,9 @@ export class RideMatchingController {
   @GrpcMethod(RIDE_MATCHING_SERVICE_NAME, 'calcultateRide')
   calculateRide(request: ICalculateRideRequest) {
     return this.rideMatchingService.calculateRide(request);
+  }
+  @GrpcMethod(RIDE_MATCHING_SERVICE_NAME, 'getRideDetails')
+  getRideDetails(request: IGetRideDetailsRequest) {
+    return this.rideMatchingService.getRideDetails(request.rideId);
   }
 }

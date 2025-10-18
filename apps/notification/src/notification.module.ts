@@ -3,7 +3,7 @@ import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
-import { RedisModule, USER_PACKAGE_NAME } from '@app/common';
+import { RedisModule, RIDE_MATCHING_PACKAGE_NAME, USER_PACKAGE_NAME } from '@app/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -23,7 +23,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           url: process.env.USER_GRPC_URI,
         },
       },
-    ]),
+      {
+        name: RIDE_MATCHING_PACKAGE_NAME,
+        transport: Transport.GRPC,
+        options: {
+          package: RIDE_MATCHING_PACKAGE_NAME,
+          protoPath: join(process.cwd(), 'protos/ride-matching.proto'),
+          url: process.env.RIDE_MATCHING_GRPC_URI,
+        },
+      },
+      ]),
   ],
   controllers: [NotificationController],
   providers: [NotificationService],

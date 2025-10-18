@@ -4,11 +4,19 @@ import "location.proto";
 service RideMatchingService {
     rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
     rpc calcultateRide(CalculateRideRequest) returns (CalculateRideResponse);
+    rpc getRideDetails(GetRideDetailsRequest) returns (GetRideDetailsResponse);
 }
 
 message LatLng {
     double lng = 1;
     double lat = 2;
+}
+message Ride {
+    string id = 1;
+    string status = 2;
+    double price = 3;
+    LatLng pickupLocation = 4;
+    LatLng destinationLocation = 5;
 }
 
 message CalculateRideRequest {
@@ -29,4 +37,11 @@ message RequestRideRequest {
 
 message RequestRideResponse {
     string message = 1;
+}
+
+message GetRideDetailsRequest {
+    string rideId = 1;
+}
+message GetRideDetailsResponse {
+    Ride ride = 1;
 }

@@ -12,7 +12,6 @@ import { Socket } from 'socket.io';
 @Injectable()
 export class AllExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
-    if (host.getType() === 'http') {
       const ctx = host.switchToHttp();
       const response = ctx.getResponse<Response>();
       const request = ctx.getRequest<Request>();
@@ -27,18 +26,6 @@ export class AllExceptionFilter implements ExceptionFilter {
         path: request.url,
         message: exception instanceof HttpException ? exception.message : 'Internal server error',
       });
-    } else if (host.getType() === 'ws') {
-      const client = host.switchToWs().getClient<Socket>();
-      
-      if (exception instanceof WsException) {
-        client.emit('error', { message: exception.message });
-      } else if (exception instanceof HttpException) {
-        client.emit('error', { message: exception.message, code: exception.getStatus() });
-      } else if (exception && typeof exception === 'object' && 'details' in exception && 'code' in exception) {
-        client.emit('error', { message: (exception as any).details, code: (exception as any).code });
-      } else {
-        client.emit('error', { message: 'Internal server error' });
-      }
-    }
-  }
+    } 
+  
 }

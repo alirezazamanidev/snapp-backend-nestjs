@@ -4,15 +4,15 @@ import { IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsNumberString, IsString
 
 export class UpdateLocationDto {
     @ApiProperty({description:'latitude'})
-    @IsString() 
+
     @IsNotEmpty()
     @IsLatitude()
-    latitude: string;
+    latitude: number;
     @ApiProperty({description:'longitude'})
-    @IsString()
+
     @IsNotEmpty()
     @IsLongitude()
-    longitude: string;
+    longitude: number;
 }
 
 export class GetNearbyDriversDto {
