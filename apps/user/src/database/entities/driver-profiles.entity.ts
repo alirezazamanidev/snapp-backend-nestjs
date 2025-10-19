@@ -4,7 +4,7 @@ import { UserEntity } from "./user.entity";
 
 @Entity('driver_profiles')
 export class DriverProfilesEntity extends BaseEntity {
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ })
     userId : string;
     @Column()
     carPlateNumber: string;

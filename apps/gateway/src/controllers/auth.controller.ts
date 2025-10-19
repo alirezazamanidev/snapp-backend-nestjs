@@ -24,7 +24,6 @@ import { lastValueFrom } from 'rxjs';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { InvalidateSessionDto } from '../dtos/auth.dto';
 import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
-
 @Controller('auth')
 @UseInterceptors(ErrorGrpcInterceptor)
 export class AuthController implements OnModuleInit {
@@ -85,4 +84,5 @@ export class AuthController implements OnModuleInit {
   invalidateAllSessions(@Req() req: Request) {
     return lastValueFrom(this.authclientService.invalidateAllSessions({userId: req.user.userId}));
   }
+  
 }

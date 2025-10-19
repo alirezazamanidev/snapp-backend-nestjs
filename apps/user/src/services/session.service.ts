@@ -1,10 +1,11 @@
 import { SessionEntity } from '../database/entities/session.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { REDIS_CLIENT } from '@app/common/configs/redis.config';
 import Redis from 'ioredis';
 import { RpcException } from '@nestjs/microservices';
+import { Role } from '@app/common';
 
 @Injectable()
 export class SessionService {
@@ -15,72 +16,70 @@ export class SessionService {
     private readonly redisClient: Redis,
   ) {}
 
-  async create(userId: string, ipAddress: string, userAgent: string) {
-    let session = this.sessionRepository.create({
+  async create({userId, ipAddress, userAgent, role}:{userId: string, ipAddress: string, userAgent: string, role?: Role | null }) {
+    const normalizedUserAgent = userAgent?.trim().toLowerCase() || '';
+    let session=await this.sessionRepository.findOne({
+      where:{
+        userId,
+        ipAddress,
+        userAgent:normalizedUserAgent,
+      }
+    })
+    if(session) {
+      if(!session.isActive) session.isActive = true;
+      session.expiresAt=new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30); // 30 days
+      if(role) session.role = role;
+      session.lastLoginAt=new Date();
+      session=await this.sessionRepository.save(session);
+    }
+    session=this.sessionRepository.create({
       userId,
       ipAddress,
-      isActive: true,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days,
-      userAgent,
+      userAgent:normalizedUserAgent,
+      isActive:true,
+      expiresAt:new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30), // 30 days
+      role: role || null,
+      lastLoginAt: new Date(),
     });
-   session =  await this.sessionRepository.save(session);
-  
-    const payload = JSON.stringify({
-      userId,
-      exp: session.expiresAt.getTime(),
-    });
-    await this.redisClient.setex(`session:${session.id}`, 60 * 30, payload); // 30 minutes;
+    session=await this.sessionRepository.save(session);
     return session.id;
+
   }
 
   async validate(sessionId: string) {
-    if (!sessionId)
-      throw new RpcException({ code: 401, message: 'Session ID is required' });
-    const cachedSession = await this.redisClient.get(`session:${sessionId}`);
-    if (cachedSession) {
-      const session = JSON.parse(cachedSession);
-    
-      await this.redisClient.expire(`session:${sessionId}`, 60 * 30);
+    if(!sessionId) throw new RpcException({ code: 401, message: 'Session ID is required' });
+    const catchedSession=await this.redisClient.get(`session:${sessionId}`);
+    if(catchedSession) {
+      const sessionData = JSON.parse(catchedSession);
+      await this.redisClient.expire(`session:${sessionId}`, 60 * 30); // 30 minutes
       return {
-        userId: session.userId,
         sessionId,
-        role: session?.role,
-      };
+        userId: sessionData.userId,
+        role: sessionData.role,
+      }
     }
-    const session = await this.sessionRepository.findOne({
-      where: {
-        id: sessionId,
-      },
-      relations: ['user'],
-      select: {
-        id: true,
-        expiresAt: true,
-        userId: true,
-        user: {
-          id: true,
-          role: true,
-        },
-      },
-    });
-    if (!session)
-      throw new RpcException({ code: 401, message: 'Invalid session ID' });
-    if (session.expiresAt < new Date()) {
+    const session=await this.sessionRepository.findOne({
+      where:{
+        id:sessionId,
+        isActive:true,
+      }
+    })
+    if(!session) throw new RpcException({ code: 401, message: 'Invalid session ID' });
+    if(session.expiresAt < new Date()) {
       await this.invalidate(sessionId);
       throw new RpcException({ code: 401, message: 'Session expired' });
     }
-
-    const payload = JSON.stringify({
+    const payload ={
       userId: session.userId,
-      role: session.user.role,
-      exp: session.expiresAt.getTime(),
-    });
-    await this.redisClient.setex(`session:${sessionId}`, 60 * 30, payload);
-
+      role: session.role,
+    }
+    await this.redisClient.setex(`session:${sessionId}`, 60 * 30, JSON.stringify(payload)); // 30 minutes
     return {
-      userId: session?.userId,
       sessionId,
-      role: session?.user?.role,
-    };
+      userId: session.userId,
+      role: session.role,
+    }
+    
   }
   async invalidate(sessionId: string) {
     if (!sessionId)

@@ -1,5 +1,6 @@
 import {
   IUserService,
+  Role,
   USER_PACKAGE_NAME,
   USER_SERVICE_NAME,
 } from '@app/common';
@@ -19,6 +20,7 @@ import { CreateOrUpdateDriverProfileDto, UpdateUserRoleDto } from '../dtos/user.
 import type { Request } from 'express';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { SwaggerConsumes } from '../common/enums/swagger.enum';
+import { CheckRole } from '../common/decorators/role.decorator';
 
 @Controller('user')
 export class UserController implements OnModuleInit {
@@ -40,7 +42,7 @@ export class UserController implements OnModuleInit {
   }
   @Post('driver/profile')
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
-  @UseGuards(AuthGuard)
+  @CheckRole(Role.DRIVER)
   @ApiOperation({ summary: 'Create driver profile' })
   createOrUpdateDriverProfile(@Body() dto: CreateOrUpdateDriverProfileDto, @Req() req: Request) {
     return this.userClientService.createOrUpdateDriverProfile({

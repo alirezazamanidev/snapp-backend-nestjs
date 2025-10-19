@@ -14,6 +14,7 @@ import {
 import { DriverProfilesEntity } from '../database/entities/driver-profiles.entity';
 import { RpcException } from '@nestjs/microservices';
 import Redis from 'ioredis';
+import { SessionEntity } from '../database/entities/session.entity';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,8 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(DriverProfilesEntity)
     private readonly driverProfileRepository: Repository<DriverProfilesEntity>,
+    @InjectRepository(SessionEntity)
+    private readonly sessionRepository: Repository<SessionEntity>,
   ) {}
   async createUser(userProfile: GoogleUserProfile): Promise<UserEntity> {
     let user = await this.userRepository.findOne({
@@ -48,6 +51,7 @@ export class UserService {
     if(!session) throw new RpcException({ code: 401, message: 'Invalid session ID' });
     const sessionData = JSON.parse(session);
     await this.userRepository.update(sessionData.userId, { role: dto.role as Role });
+    await this.sessionRepository.update({userId: sessionData.userId}, { role: dto.role as Role });
     await this.redisClient.del(`session:${dto.sessionId}`);
     return {
       message: 'User role updated successfully',

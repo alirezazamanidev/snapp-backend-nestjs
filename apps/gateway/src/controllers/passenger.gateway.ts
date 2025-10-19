@@ -25,6 +25,7 @@ import {
   REDIS_CLIENT,
   RIDE_MATCHING_PACKAGE_NAME,
   RIDE_MATCHING_SERVICE_NAME,
+  Role,
   USER_PACKAGE_NAME,
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
@@ -43,8 +44,6 @@ import Redis from 'ioredis';
     credentials: true,
   },
 })
-@UseFilters(WsExceptionFilter)
-@UseInterceptors(ErrorGrpcInterceptor)
 export class PassengerGateway
   implements
     OnModuleInit,
@@ -91,11 +90,15 @@ export class PassengerGateway
     });
   }
   async handleConnection(client: Socket) {
-    await this.authenticate(client);
-    client.join(`passenger:${client.data.userId}`);
-    this.logger.log(
-      `Client connected: ${client.id} user id: ${client.data.userId}`,
-    );
+    try {
+      await this.authenticate(client);
+      client.join(`passenger:${client.data.userId}`);
+      this.logger.log(
+        `Client connected: ${client.id} user id: ${client.data.userId}`,
+      );
+    } catch (error) {
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -163,6 +166,9 @@ export class PassengerGateway
     );
     if (!result) {
       throw new WsException('Unauthorized');
+    }
+    if(result.role !== Role.USER) {
+      throw new WsException('Forbidden');
     }
     client.data.userId = result.userId;
   }

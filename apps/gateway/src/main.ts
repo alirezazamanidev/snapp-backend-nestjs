@@ -4,6 +4,7 @@ import { GatewayModule } from './gateway.module';
 import { swaggerConfig } from './configs/swagger.config';
 import cookieParser from 'cookie-parser';
 import { AllExceptionFilter } from './common/filters/allException.filter';
+import { WsExceptionFilter } from './common/filters/ws-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule);
@@ -23,7 +24,7 @@ async function bootstrap() {
     credentials: true,
   });
   // global exception filter
-  app.useGlobalFilters(new AllExceptionFilter());
+  app.useGlobalFilters(new AllExceptionFilter(), new WsExceptionFilter());
   // cookie parser
   app.use(cookieParser());
   // Global prefix

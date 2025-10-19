@@ -8,6 +8,7 @@ import {
   REDIS_CLIENT,
   RIDE_MATCHING_PACKAGE_NAME,
   RIDE_MATCHING_SERVICE_NAME,
+  Role,
   USER_PACKAGE_NAME,
 } from '@app/common';
 import {
@@ -29,7 +30,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { async, lastValueFrom } from 'rxjs';
+import {  lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateLocationDto } from '../dtos/location.dto';
 import Redis from 'ioredis';
@@ -45,8 +46,6 @@ import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.intercep
     credentials: true,
   },
 })
-@UseFilters(WsExceptionFilter)
-@UseInterceptors(ErrorGrpcInterceptor)
 export class DriverGateway
   implements
     OnModuleInit,
@@ -97,18 +96,22 @@ export class DriverGateway
   }
 
   async handleConnection(client: Socket) {
-    await this.authenticate(client);
+    try {
+      await this.authenticate(client);
 
-    client.join(`driver:${client.data.userId}`);
-    this.logger.log(
-      `Client connected: ${client.id} user id: ${client.data.userId}`,
-    );
+      client.join(`driver:${client.data.userId}`);
+      this.logger.log(
+        `Client connected: ${client.id} user id: ${client.data.userId}`,
+      );
+    } catch (error) {
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket) {
     client.leave(`driver:${client.data.userId}`);
     this.logger.log(
-      `Client disconnected: ${client.id} user id: $/*  */{client.data.userId}`,
+      `Client disconnected: ${client.id} user id: ${client.data.userId}`,
     );
   }
 
@@ -148,6 +151,10 @@ export class DriverGateway
     if (!result) {
       throw new WsException('Unauthorized');
     }
+    if(result.role === Role.DRIVER) {
+      throw new WsException('Forbidden');
+    }
     client.data.userId = result.userId;
+
   }
 }
