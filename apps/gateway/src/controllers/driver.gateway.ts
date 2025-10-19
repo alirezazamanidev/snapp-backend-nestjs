@@ -2,9 +2,12 @@ import {
   AUTH_SERVICE_NAME,
   IAuthService,
   ILocationService,
+  IRideMatchingService,
   LOCATION_PACKAGE_NAME,
   LOCATION_SERVICE_NAME,
   REDIS_CLIENT,
+  RIDE_MATCHING_PACKAGE_NAME,
+  RIDE_MATCHING_SERVICE_NAME,
   USER_PACKAGE_NAME,
 } from '@app/common';
 import {
@@ -29,9 +32,10 @@ import {
 import { async, lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateLocationDto } from '../dtos/location.dto';
-import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
-import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import Redis from 'ioredis';
+import { AcceptRideDto } from '../dtos/ride.dto';
+import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
+import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
 
 @WebSocketGateway(8002, {
   namespace: 'driver',
@@ -53,8 +57,9 @@ export class DriverGateway
   private readonly logger = new Logger(DriverGateway.name);
   private authClientService: IAuthService;
   private locationClientService: ILocationService;
-
+  private rideMatchingClientService: IRideMatchingService;
   constructor(
+    @Inject(RIDE_MATCHING_PACKAGE_NAME) private readonly rideMatchingClient: ClientGrpc,
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     @Inject(USER_PACKAGE_NAME) private readonly AuthClient: ClientGrpc,
     @Inject(LOCATION_PACKAGE_NAME) private readonly LocationClient: ClientGrpc,
@@ -67,6 +72,8 @@ export class DriverGateway
       this.AuthClient.getService<IAuthService>(AUTH_SERVICE_NAME);
     this.locationClientService =
       this.LocationClient.getService<ILocationService>(LOCATION_SERVICE_NAME);
+    this.rideMatchingClientService =
+      this.rideMatchingClient.getService<IRideMatchingService>(RIDE_MATCHING_SERVICE_NAME);
   }
   afterInit() {
     this.redisClient.subscribe('ride.requested', (err, count) => {
@@ -114,6 +121,15 @@ export class DriverGateway
       userId: client.data.userId,
       latitude: payload.latitude,
       longitude: payload.longitude,
+    });
+  }
+
+  @SubscribeMessage('ride-accepted')
+   async acceptRide(@ConnectedSocket() client: Socket, @MessageBody() payload: AcceptRideDto) {
+  
+    return await this.rideMatchingClientService.acceptRide({
+      rideId: payload.rideId,
+      driverId: client.data.userId,
     });
   }
 

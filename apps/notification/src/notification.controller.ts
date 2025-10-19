@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { EventPattern } from '@nestjs/microservices';
-import type { IRideRequestedPayload } from '@app/common';
+import { type IRideAcceptedPayload, type IRideRequestedPayload } from '@app/common';
 
 @Controller()
 export class NotificationController {
@@ -11,4 +11,8 @@ export class NotificationController {
    handleRideRequested(payload: IRideRequestedPayload) {
      return this.notificationService.handleRideRequested(payload);
   }
-}
+  @EventPattern('ride.accepted')
+  handleRideAccepted(payload: IRideAcceptedPayload) {
+    return this.notificationService.handleRideAccepted(payload);
+  }
+}`    `

@@ -1,4 +1,5 @@
 import {
+  IRideAcceptedPayload,
   IRideMatchingService,
   IRideRequestedPayload,
   IUserService,
@@ -44,5 +45,14 @@ export class NotificationService implements OnModuleInit {
       driverIds,
     };
     await this.redisClient.publish('ride.requested', JSON.stringify(message));
+  }
+  async handleRideAccepted(payload: IRideAcceptedPayload) {
+    const { driverId, userId } = payload;
+    const driver = await lastValueFrom(this.userClientService.getProfile({ userId: driverId }));
+    const message = {
+      driver,
+      userId,
+    };
+    await this.redisClient.publish('ride.accepted', JSON.stringify(message));
   }
 }

@@ -20,3 +20,8 @@ export class CalculateRideDto {
   @IsString()
   destinationLocation: string
 }
+export class AcceptRideDto {
+  @IsNotEmpty()
+  @IsString()
+  rideId: string
+}

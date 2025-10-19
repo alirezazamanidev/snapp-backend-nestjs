@@ -6,3 +6,7 @@ export interface IRideRequestedPayload {
     userId:string;
     driverIds: string[];
 }
+export interface IRideAcceptedPayload {
+    driverId: string;
+    userId: string;
+}

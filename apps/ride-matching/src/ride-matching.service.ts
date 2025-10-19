@@ -17,7 +17,7 @@ import {
 import { RideStatus } from './enums/ride-status.enum';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom, map } from 'rxjs';
-
+import { IAcceptRideRequest } from '@app/common/interfaces/ride-matching-grpc.interface';
 @Injectable()
 export class RideMatchingService implements OnModuleInit {
   private locationClient: ILocationService;
@@ -50,7 +50,10 @@ export class RideMatchingService implements OnModuleInit {
         message: 'User already has a ride in progress or requested',
       });
     }
-    const { price } = await this.calculateRide({ pickupLocation, destinationLocation });
+    const { price } = await this.calculateRide({
+      pickupLocation,
+      destinationLocation,
+    });
     const ride = this.rideRepository.create({
       pickupLocation,
       destinationLocation,
@@ -61,13 +64,15 @@ export class RideMatchingService implements OnModuleInit {
     await this.rideRepository.save(ride);
 
     // get nearby drivers
-    const {driverIds} = await lastValueFrom(this.locationClient.getNearbyDrivers({
-      latitude: pickupLocation.lat,
-      longitude: pickupLocation.lng,
-      radius: 10,
-    }));
+    const { driverIds } = await lastValueFrom(
+      this.locationClient.getNearbyDrivers({
+        latitude: pickupLocation.lat,
+        longitude: pickupLocation.lng,
+        radius: 10,
+      }),
+    );
     console.log(driverIds);
-    
+
     this.notificationClient.emit('ride.requested', {
       rideId: ride.id,
       userId,
@@ -78,10 +83,35 @@ export class RideMatchingService implements OnModuleInit {
       message: 'Ride requested successfully',
     };
   }
+  async acceptRide(request: IAcceptRideRequest) {
+    const { rideId, driverId } = request;
+    const ride = await this.rideRepository.findOne({
+      where: {
+        id: rideId,
+      },
+    });
+    if (!ride) {
+      throw new RpcException({
+        code: 404,
+        message: 'Ride not found',
+      });
+    }
+    await this.rideRepository.update(rideId, {
+      driverId,
+      status: RideStatus.ACCEPTED,
+    });
+    this.notificationClient.emit('ride.accepted', {
+      driverId,
+      userId: ride.userId,
+    });
+    return {
+      message: 'Ride accepted successfully',
+    };
+  }
   async calculateRide(request: ICalculateRideRequest) {
     try {
       const { pickupLocation, destinationLocation } = request;
-    
+
       const apiKey =
         'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijg3MzU1MWExZTQwMzQ1N2Q4OTY1ZjIwNTI5ODNhNGMzIiwiaCI6Im11cm11cjY0In0=';
       const result = await lastValueFrom(
@@ -99,7 +129,6 @@ export class RideMatchingService implements OnModuleInit {
           .pipe(
             map((res) => res.data),
             catchError((error) => {
-            
               throw new RpcException({
                 code: 500,
                 message: 'Failed to calculate ride',
@@ -112,7 +141,7 @@ export class RideMatchingService implements OnModuleInit {
       const distance = features[0].properties.summary.distance; // distance in meters
       const duration = features[0].properties.segments[0].duration; // duration in seconds
       const routeCoordinates = features[0].geometry.coordinates;
-  
+
       // Calculate price based on distance and duration
       const distanceInKm = distance / 1000;
       const durationInMinutes = duration / 60;
@@ -144,13 +173,15 @@ export class RideMatchingService implements OnModuleInit {
         distance: distanceInKm,
         duration: durationInMinutes,
         price: totalPrice,
-        routeCoordinates: routeCoordinates.map((coordinate: [number, number]) => ({
-          lng: coordinate[1],
-          lat: coordinate[0],
-        })),
+        routeCoordinates: routeCoordinates.map(
+          (coordinate: [number, number]) => ({
+            lng: coordinate[1],
+            lat: coordinate[0],
+          }),
+        ),
       };
     } catch (error) {
-       console.log(error);
+      console.log(error);
       throw new RpcException({
         code: 500,
         message: 'Failed to calculate ride',
@@ -162,7 +193,13 @@ export class RideMatchingService implements OnModuleInit {
       where: {
         id: rideId,
       },
-      select:['id','status','price','pickupLocation','destinationLocation']
+      select: [
+        'id',
+        'status',
+        'price',
+        'pickupLocation',
+        'destinationLocation',
+      ],
     });
     if (!ride) {
       throw new RpcException({
@@ -171,7 +208,7 @@ export class RideMatchingService implements OnModuleInit {
       });
     }
     return {
-      ride
-    }
+      ride,
+    };
   }
 }

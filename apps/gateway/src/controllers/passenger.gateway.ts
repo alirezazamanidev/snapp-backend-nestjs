@@ -15,12 +15,14 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   WsException,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
   AUTH_SERVICE_NAME,
   IAuthService,
   IRideMatchingService,
+  REDIS_CLIENT,
   RIDE_MATCHING_PACKAGE_NAME,
   RIDE_MATCHING_SERVICE_NAME,
   USER_PACKAGE_NAME,
@@ -31,6 +33,7 @@ import { CalculateRideDto, RequestRideDto } from '../dtos/ride.dto';
 import { DriverGateway } from './driver.gateway';
 import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
 import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
+import Redis from 'ioredis';
 
 @WebSocketGateway(8002, {
   namespace: 'passenger',
@@ -43,7 +46,11 @@ import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.intercep
 @UseFilters(WsExceptionFilter)
 @UseInterceptors(ErrorGrpcInterceptor)
 export class PassengerGateway
-  implements OnModuleInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnModuleInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnGatewayInit
 {
   private readonly logger = new Logger(PassengerGateway.name);
   @WebSocketServer()
@@ -53,9 +60,9 @@ export class PassengerGateway
   private authClient: IAuthService;
 
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     @Inject(RIDE_MATCHING_PACKAGE_NAME) private readonly rideClient: ClientGrpc,
     @Inject(USER_PACKAGE_NAME) private readonly authGrpcClient: ClientGrpc,
-    private readonly driverGateway: DriverGateway
   ) {}
 
   onModuleInit() {
@@ -65,7 +72,24 @@ export class PassengerGateway
     this.authClient =
       this.authGrpcClient.getService<IAuthService>(AUTH_SERVICE_NAME);
   }
+  afterInit() {
+    this.redisClient.subscribe('ride.accepted', (err, count) => {
+      if (err) {
+        this.logger.error(err);
+      }
+    });
 
+    this.redisClient.on('message', (channel, message) => {
+      const payload = JSON.parse(message);
+      if (channel === 'ride.accepted') {
+        const { userId, driver } = payload;
+        console.log(userId, driver);
+        this.server.to(`passenger:${userId}`).emit('ride.accepted', {
+          driver,
+        });
+      }
+    });
+  }
   async handleConnection(client: Socket) {
     await this.authenticate(client);
     client.join(`passenger:${client.data.userId}`);
@@ -82,37 +106,48 @@ export class PassengerGateway
   }
 
   @SubscribeMessage('request-ride')
-  async requestRide(@ConnectedSocket() client: Socket, @MessageBody() payload: RequestRideDto) {
-    const {pickupLocation, destinationLocation} = payload;
-    const [plat,plng] = pickupLocation.split(',');
-    const [dlat,dlng] = destinationLocation.split(',');
-    return await lastValueFrom(this.rideMatchingClient.requestRide({
-      userId: client.data.userId,
-      pickupLocation: {
-        lat: parseFloat(plat),
-        lng: parseFloat(plng),
-      },
-      destinationLocation: {
-        lat: parseFloat(dlat),
-        lng: parseFloat(dlng),
-      },
-    }));
+  async requestRide(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: RequestRideDto,
+  ) {
+    const { pickupLocation, destinationLocation } = payload;
+    const [plat, plng] = pickupLocation.split(',');
+    const [dlat, dlng] = destinationLocation.split(',');
+    return await lastValueFrom(
+      this.rideMatchingClient.requestRide({
+        userId: client.data.userId,
+        pickupLocation: {
+          lat: parseFloat(plat),
+          lng: parseFloat(plng),
+        },
+        destinationLocation: {
+          lat: parseFloat(dlat),
+          lng: parseFloat(dlng),
+        },
+      }),
+    );
   }
   @SubscribeMessage('calculate-ride')
-  async calculateRide(@ConnectedSocket() client: Socket, @MessageBody() payload: CalculateRideDto) {
-    const {pickupLocation, destinationLocation} = payload;
+  async calculateRide(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: CalculateRideDto,
+  ) {
+    const { pickupLocation, destinationLocation } = payload;
     const [pickupLatitude, pickupLongitude] = pickupLocation.split(',');
-    const [destinationLatitude, destinationLongitude] = destinationLocation.split(',');
-    return await lastValueFrom(this.rideMatchingClient.calcultateRide({
-      pickupLocation: {
+    const [destinationLatitude, destinationLongitude] =
+      destinationLocation.split(',');
+    return await lastValueFrom(
+      this.rideMatchingClient.calcultateRide({
+        pickupLocation: {
           lng: parseFloat(pickupLatitude),
-        lat: parseFloat(pickupLongitude),
-      },
-      destinationLocation: {
-        lng: parseFloat(destinationLatitude),
-        lat: parseFloat(destinationLongitude),
-      },
-    }));
+          lat: parseFloat(pickupLongitude),
+        },
+        destinationLocation: {
+          lng: parseFloat(destinationLatitude),
+          lat: parseFloat(destinationLongitude),
+        },
+      }),
+    );
   }
   private async authenticate(client: Socket) {
     // auth

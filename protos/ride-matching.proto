@@ -5,6 +5,7 @@ service RideMatchingService {
     rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
     rpc calcultateRide(CalculateRideRequest) returns (CalculateRideResponse);
     rpc getRideDetails(GetRideDetailsRequest) returns (GetRideDetailsResponse);
+    rpc acceptRide(AcceptRideRequest) returns (AcceptRideResponse);
 }
 
 message LatLng {
@@ -44,4 +45,11 @@ message GetRideDetailsRequest {
 }
 message GetRideDetailsResponse {
     Ride ride = 1;
+}
+message AcceptRideRequest {
+    string rideId = 1;
+    string driverId = 2;
+}
+message AcceptRideResponse {
+    string message = 1;
 }

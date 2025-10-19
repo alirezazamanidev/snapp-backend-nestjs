@@ -19,6 +19,7 @@ export interface IRideMatchingService {
     requestRide(request: IRequestRideRequest): Observable<IRequestRideResponse>;
     calcultateRide(request: ICalculateRideRequest): Observable<ICalculateRideResponse>;
     getRideDetails(request: IGetRideDetailsRequest): Observable<IGetRideDetailsResponse>;
+    acceptRide(request: IAcceptRideRequest): Promise<IAcceptRideResponse>;
 }   
 
 export interface ICalculateRideRequest {
@@ -38,6 +39,14 @@ export interface IGetRideDetailsRequest {
 }
 export interface IGetRideDetailsResponse {
     ride: IRide;
+}
+
+export interface IAcceptRideRequest {
+    rideId: string;
+    driverId: string;
+}
+export interface IAcceptRideResponse {
+    message: string;
 }
 
 export interface IRide {
