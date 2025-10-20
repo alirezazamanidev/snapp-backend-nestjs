@@ -15,7 +15,7 @@ import { DriverProfilesEntity } from '../database/entities/driver-profiles.entit
 import { RpcException } from '@nestjs/microservices';
 import Redis from 'ioredis';
 import { SessionEntity } from '../database/entities/session.entity';
-
+import { ICheckDriverProfileRequest, IGetRoleRequest } from '@app/common/interfaces/user-grpc.interface';
 @Injectable()
 export class UserService {
   constructor(
@@ -51,8 +51,6 @@ export class UserService {
     if(!session) throw new RpcException({ code: 401, message: 'Invalid session ID' });
     const sessionData = JSON.parse(session);
     await this.userRepository.update(sessionData.userId, { role: dto.role as Role });
-    await this.sessionRepository.update({userId: sessionData.userId}, { role: dto.role as Role });
-    await this.redisClient.del(`session:${dto.sessionId}`);
     return {
       message: 'User role updated successfully',
     };
@@ -89,6 +87,24 @@ export class UserService {
       fullname: user.fullname,
       email: user.email || '',
       avatarUrl: user.avatarUrl || '',
+    };
+  }
+  async checkDriverProfile(payload: ICheckDriverProfileRequest) {
+    const profile = await this.driverProfileRepository.findOne({
+      where: { userId: payload.userId },
+    });
+    return {
+      hasProfile: !!profile,
+    };
+  }
+  async getRole(payload: IGetRoleRequest) {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.userId },
+    });
+    console.log(user);
+    if (!user) throw new RpcException({ code: 404, message: 'User not found' });
+    return {
+      role: user?.role || null,
     };
   }
 }

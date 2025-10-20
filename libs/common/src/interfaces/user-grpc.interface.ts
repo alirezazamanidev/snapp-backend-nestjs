@@ -70,7 +70,20 @@ export interface IGetProfileResponse {
   email: string;
   avatarUrl: string;
 }
+export interface ICheckDriverProfileRequest {
+  userId: string;
+}
+export interface ICheckDriverProfileResponse {
+  hasProfile: boolean;
+}
+export interface IGetRoleRequest {
+  userId: string;
+}
+export interface IGetRoleResponse {
+  role: string;
+}
 export interface IUserService {
+  getRole(request: IGetRoleRequest): Observable<IGetRoleResponse>;
   getProfile(request: IGetProfileRequest): Observable<IGetProfileResponse>;
   updateUserRole(
     request: IUpdateUserRoleRequest,
@@ -78,4 +91,7 @@ export interface IUserService {
   createOrUpdateDriverProfile(
     request: ICreateOrUpdateDriverProfileRequest,
   ): Promise<ICreateOrUpdateDriverProfileResponse>;
+  checkDriverProfile(
+    request: ICheckDriverProfileRequest,
+  ): Observable<ICheckDriverProfileResponse>;
 }

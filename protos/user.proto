@@ -75,7 +75,25 @@ message GetProfileResponse {
     string email = 3;
     string avatarUrl = 4;
 }
+
+message CheckDriverProfileRequest {
+    string userId = 1;
+}
+
+message CheckDriverProfileResponse {
+    bool hasProfile = 1;
+}
+
+message GetRoleRequest {
+    string userId = 1;
+}
+
+message GetRoleResponse {
+    string role = 1;
+}
 service UserService {
+    rpc getRole(GetRoleRequest) returns (GetRoleResponse);
+    rpc checkDriverProfile(CheckDriverProfileRequest) returns (CheckDriverProfileResponse);
     rpc updateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
     rpc createOrUpdateDriverProfile(CreateOrUpdateDriverProfileRequest) returns (CreateOrUpdateDriverProfileResponse);
     rpc getProfile(GetProfileRequest) returns (GetProfileResponse);

@@ -7,6 +7,7 @@ import {
 import {
   Body,
   Controller,
+  Get,
   Inject,
   OnModuleInit,
   Patch,
@@ -50,6 +51,23 @@ export class UserController implements OnModuleInit {
       carPlateNumber: dto.carPlateNumber,
       carModel: dto.carModel,
       carColor: dto.carColor,
+    });
+  }
+  @Get('check-driver-profile')
+  @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
+  @CheckRole(Role.DRIVER)
+  @ApiOperation({ summary: 'Check driver profile' })
+  checkDriverProfile(@Req() req: Request) {
+    return this.userClientService.checkDriverProfile({
+      userId: req.user.userId,
+    });
+  }
+
+  @Get('get-role')
+  @UseGuards(AuthGuard)
+  getRole(@Req() req: Request) {
+    return this.userClientService.getRole({
+      userId: req.user.userId,
     });
   }
 }

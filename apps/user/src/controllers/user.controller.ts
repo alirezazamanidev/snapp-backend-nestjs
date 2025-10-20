@@ -5,7 +5,9 @@ import {
   type ICreateOrUpdateDriverProfileRequest,
   type IGetProfileRequest,
   type IUpdateUserRoleRequest,
+  type ICheckDriverProfileRequest,
   USER_SERVICE_NAME,
+  type IGetRoleRequest,
 } from '@app/common';
 
 @Controller()
@@ -23,5 +25,13 @@ export class UserController {
   @GrpcMethod(USER_SERVICE_NAME, 'getProfile')
   getProfile(payload: IGetProfileRequest) {
     return this.userService.getProfile(payload);
+  }
+  @GrpcMethod(USER_SERVICE_NAME, 'checkDriverProfile')
+  checkDriverProfile(payload: ICheckDriverProfileRequest) {
+    return this.userService.checkDriverProfile(payload);
+  }
+  @GrpcMethod(USER_SERVICE_NAME, 'getRole')
+  getRole(payload: IGetRoleRequest) {
+    return this.userService.getRole(payload);
   }
 }

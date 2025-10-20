@@ -16,7 +16,7 @@ export class SessionService {
     private readonly redisClient: Redis,
   ) {}
 
-  async create({userId, ipAddress, userAgent, role}:{userId: string, ipAddress: string, userAgent: string, role?: Role | null }) {
+  async create({userId, ipAddress, userAgent}:{userId: string, ipAddress: string, userAgent: string }) {
     const normalizedUserAgent = userAgent?.trim().toLowerCase() || '';
     let session=await this.sessionRepository.findOne({
       where:{
@@ -28,7 +28,6 @@ export class SessionService {
     if(session) {
       if(!session.isActive) session.isActive = true;
       session.expiresAt=new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30); // 30 days
-      if(role) session.role = role;
       session.lastLoginAt=new Date();
       session=await this.sessionRepository.save(session);
     }
@@ -38,7 +37,6 @@ export class SessionService {
       userAgent:normalizedUserAgent,
       isActive:true,
       expiresAt:new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30), // 30 days
-      role: role || null,
       lastLoginAt: new Date(),
     });
     session=await this.sessionRepository.save(session);
@@ -55,7 +53,6 @@ export class SessionService {
       return {
         sessionId,
         userId: sessionData.userId,
-        role: sessionData.role,
       }
     }
     const session=await this.sessionRepository.findOne({
@@ -71,14 +68,12 @@ export class SessionService {
     }
     const payload ={
       userId: session.userId,
-      role: session.role,
     }
     await this.redisClient.setex(`session:${sessionId}`, 60 * 30, JSON.stringify(payload)); // 30 minutes
     return {
       sessionId,
       userId: session.userId,
-      role: session.role,
-    }
+      }
     
   }
   async invalidate(sessionId: string) {

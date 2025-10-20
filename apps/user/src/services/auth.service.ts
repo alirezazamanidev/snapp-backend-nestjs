@@ -42,7 +42,7 @@ export class AuthService {
       userId: user.id,
       ipAddress: payload.ipAddress,
       userAgent: payload.userAgent,
-      role: user?.role || null,
+    
     });
     return {
       message: 'Authentication successful',
