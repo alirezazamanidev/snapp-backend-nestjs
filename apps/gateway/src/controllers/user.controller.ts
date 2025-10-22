@@ -8,6 +8,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   OnModuleInit,
   Patch,
@@ -42,8 +44,9 @@ export class UserController implements OnModuleInit {
     });
   }
   @Post('driver/profile')
+  @UseGuards(AuthGuard)
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
-  @CheckRole(Role.DRIVER)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create driver profile' })
   createOrUpdateDriverProfile(@Body() dto: CreateOrUpdateDriverProfileDto, @Req() req: Request) {
     return this.userClientService.createOrUpdateDriverProfile({
@@ -55,8 +58,8 @@ export class UserController implements OnModuleInit {
   }
   @Get('check-driver-profile')
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
-  @CheckRole(Role.DRIVER)
   @ApiOperation({ summary: 'Check driver profile' })
+  @UseGuards(AuthGuard)
   checkDriverProfile(@Req() req: Request) {
     return this.userClientService.checkDriverProfile({
       userId: req.user.userId,

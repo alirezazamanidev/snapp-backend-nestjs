@@ -82,7 +82,6 @@ export class PassengerGateway
       const payload = JSON.parse(message);
       if (channel === 'ride.accepted') {
         const { userId, driver } = payload;
-        console.log(userId, driver);
         this.server.to(`passenger:${userId}`).emit('ride.accepted', {
           driver,
         });

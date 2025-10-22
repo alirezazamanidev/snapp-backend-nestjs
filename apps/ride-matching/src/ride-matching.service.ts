@@ -71,7 +71,7 @@ export class RideMatchingService implements OnModuleInit {
         radius: 10,
       }),
     );
-    console.log(driverIds);
+
 
     this.notificationClient.emit('ride.requested', {
       rideId: ride.id,

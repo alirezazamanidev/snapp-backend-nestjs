@@ -51,7 +51,6 @@ export class LocationService {
       for (const [driverId] of nearbyResults) {
         driverIds.push(driverId);
       }
-      console.log(driverIds);
       return { driverIds };
   
   

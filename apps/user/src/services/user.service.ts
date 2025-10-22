@@ -59,10 +59,10 @@ export class UserService {
     const { userId, ...driverProfile } = dto;
     // check user role
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, role: Role.DRIVER },
     });
-    if (!user || user.role !== Role.DRIVER) {
-      throw new RpcException({ code: 403, message: 'User is not a driver' });
+    if (!user) {
+      throw new RpcException({ code: 404, message: 'User not found' });
     }
     let profile = await this.driverProfileRepository.findOne({
       where: { userId },
@@ -93,6 +93,7 @@ export class UserService {
     const profile = await this.driverProfileRepository.findOne({
       where: { userId: payload.userId },
     });
+    
     return {
       hasProfile: !!profile,
     };
@@ -101,7 +102,6 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: { id: payload.userId },
     });
-    console.log(user);
     if (!user) throw new RpcException({ code: 404, message: 'User not found' });
     return {
       role: user?.role || null,
