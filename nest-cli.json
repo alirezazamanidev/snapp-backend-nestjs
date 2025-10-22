@@ -58,6 +58,15 @@
         "tsConfigPath": "apps/notification/tsconfig.app.json"
       }
     },
+    "payment": {
+      "type": "application",
+      "root": "apps/payment",
+      "entryFile": "main",
+      "sourceRoot": "apps/payment/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/payment/tsconfig.app.json"
+      }
+    },
     "ride-matching": {
       "type": "application",
       "root": "apps/ride-matching",
@@ -78,6 +87,15 @@
           "protos/*.proto"
         ],
         "watchAssets": true
+      }
+    },
+    "wallet": {
+      "type": "application",
+      "root": "apps/wallet",
+      "entryFile": "main",
+      "sourceRoot": "apps/wallet/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/wallet/tsconfig.app.json"
       }
     }
   }
