@@ -178,4 +178,3 @@ export class PassengerGateway
     client.data.userId = result.userId;
   }
 }
-

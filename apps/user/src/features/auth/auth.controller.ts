@@ -2,11 +2,11 @@ import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   AUTH_SERVICE_NAME,
-  IGoogleLoginRequest,
-  IGoogleLoginResponse,
-  IInvalidateAllSessionsRequest,
-  IInvalidateSessionRequest,
-  IValidateSessionRequest,
+  type IGoogleLoginRequest,
+  type IGoogleLoginResponse,
+  type IInvalidateAllSessionsRequest,
+  type IInvalidateSessionRequest,
+  type IValidateSessionRequest,
   IValidateSessionResponse,
 } from '@app/common';
 import { AuthService } from './auth.service';

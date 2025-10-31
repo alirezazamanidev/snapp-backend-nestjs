@@ -76,16 +76,7 @@ export class DriverGateway
   }
 
   async afterInit(server: Server) {
-    const mainServer = (server as any).server || server;
-
-    if (typeof mainServer.adapter === 'function') {
-      const pubClient = this.redisClient.duplicate();
-      const subClient = this.redisClient.duplicate();
-      mainServer.adapter(createAdapter(pubClient, subClient));
-      this.logger.log('Redis IO Adapter initialized for DriverGateway');
-    } else {
-      this.logger.log('Redis IO Adapter already initialized');
-    }
+  
   }
 
   async handleConnection(client: Socket) {

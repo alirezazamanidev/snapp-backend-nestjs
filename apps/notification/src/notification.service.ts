@@ -13,18 +13,13 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import Redis from 'ioredis';
 import { lastValueFrom } from 'rxjs';
-import { Server } from 'socket.io';
-import { createAdapter } from '@socket.io/redis-adapter';
-import { createServer } from 'http';
 
 @Injectable()
 export class NotificationService implements OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
   private userClientService: IUserService;
   private rideMatchingClientService: IRideMatchingService;
-  private io: Server;
-  private passengerNamespace: ReturnType<Server['of']>;
-  private driverNamespace: ReturnType<Server['of']>;
+  private redisPublisher: Redis;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
@@ -41,25 +36,10 @@ export class NotificationService implements OnModuleInit {
         RIDE_MATCHING_SERVICE_NAME,
       );
 
-    // Initialize Socket.IO server with Redis adapter
-    const httpServer = createServer();
-    this.io = new Server(httpServer, {
-      cors: {
-        origin: '*',
-        credentials: true,
-      },
-    });
+    // Create a separate Redis client for publishing messages
+    this.redisPublisher = this.redisClient.duplicate();
 
-    // Setup Redis IO Adapter
-    const pubClient = this.redisClient.duplicate();
-    const subClient = this.redisClient.duplicate();
-    this.io.adapter(createAdapter(pubClient, subClient));
-
-    // Get namespaces
-    this.passengerNamespace = this.io.of('/passenger');
-    this.driverNamespace = this.io.of('/driver');
-
-    this.logger.log('Socket.IO server initialized with Redis adapter');
+    this.logger.log('Notification service initialized');
   }
 
   async handleRideRequested(payload: IRideRequestedPayload) {
@@ -74,16 +54,25 @@ export class NotificationService implements OnModuleInit {
         ),
       ]);
 
-      // Emit to driver namespace for each driver
-      for (const driverId of driverIds) {
-        this.driverNamespace.to(`driver:${driverId}`).emit('ride.requested', {
+      // Publish notification to Redis for each driver
+      // Gateway will subscribe to these channels and emit to connected clients
+      const notificationData = {
+        event: 'ride.requested',
+        data: {
           ride: rideDetails.ride,
           user,
-        });
+        },
+      };
+
+      for (const driverId of driverIds) {
+        await this.redisPublisher.publish(
+          `notification:driver:${driverId}`,
+          JSON.stringify(notificationData),
+        );
       }
 
       this.logger.log(
-        `Ride requested notification sent to ${driverIds.length} drivers`,
+        `Ride requested notification published for ${driverIds.length} drivers`,
       );
     } catch (error) {
       this.logger.error('Error handling ride requested:', error);
@@ -98,12 +87,23 @@ export class NotificationService implements OnModuleInit {
         this.userClientService.getProfile({ userId: driverId }),
       );
 
-      // Emit to passenger namespace
-      this.passengerNamespace.to(`passenger:${userId}`).emit('ride.accepted', {
-        driver,
-      });
+      // Publish notification to Redis for passenger
+      // Gateway will subscribe to this channel and emit to connected client
+      const notificationData = {
+        event: 'ride.accepted',
+        data: {
+          driver,
+        },
+      };
 
-      this.logger.log(`Ride accepted notification sent to passenger ${userId}`);
+      await this.redisPublisher.publish(
+        `notification:passenger:${userId}`,
+        JSON.stringify(notificationData),
+      );
+
+      this.logger.log(
+        `Ride accepted notification published for passenger ${userId}`,
+      );
     } catch (error) {
       this.logger.error('Error handling ride accepted:', error);
       throw error;
