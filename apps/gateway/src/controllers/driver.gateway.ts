@@ -32,12 +32,8 @@ import {
 } from '@nestjs/websockets';
 import {  lastValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
-import { UpdateLocationDto } from '../dtos/location.dto';
 import Redis from 'ioredis';
-import { AcceptRideDto } from '../dtos/ride.dto';
-import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
-import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
-
+import { AcceptRideDto, DriverOnlineDto } from '../dtos/ride.dto';
 @WebSocketGateway(8002, {
   namespace: 'driver',
   cookie: true,
@@ -108,25 +104,38 @@ export class DriverGateway
     }
   }
 
-  handleDisconnect(client: Socket) {
-    client.leave(`driver:${client.data.userId}`);
-    this.logger.log(
-      `Client disconnected: ${client.id} user id: ${client.data.userId}`,
-    );
+  async handleDisconnect(client: Socket) {
+    try {
+      await this.locationClientService.driverOffline({
+        driverId: client.data.userId,
+      });
+      client.leave(`driver:${client.data.userId}`);
+      this.logger.log(`Client disconnected: ${client.id} user id: ${client.data.userId}`);
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 
-  @SubscribeMessage('update-location')
-  async updateLocation(
+  @SubscribeMessage('driver-online')
+   driverOnline(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: UpdateLocationDto,
+    @MessageBody() payload: DriverOnlineDto,
   ) {
-    return await this.locationClientService.updateLocation({
+   
+    return  this.locationClientService.driverOnline({
       userId: client.data.userId,
-      latitude: payload.latitude,
-      longitude: payload.longitude,
+      location: payload.location,
     });
   }
-
+  @SubscribeMessage('driver-offline')
+  async driverOffline(
+    @ConnectedSocket() client: Socket,
+  ) {
+  
+      return await this.locationClientService.driverOffline({
+        driverId: client.data.userId,
+    });
+  }
   @SubscribeMessage('ride-accepted')
    async acceptRide(@ConnectedSocket() client: Socket, @MessageBody() payload: AcceptRideDto) {
   

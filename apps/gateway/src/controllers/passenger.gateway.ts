@@ -30,10 +30,7 @@ import {
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-import { CalculateRideDto, RequestRideDto } from '../dtos/ride.dto';
-import { DriverGateway } from './driver.gateway';
-import { WsExceptionFilter } from '../common/filters/ws-exception.filter';
-import { ErrorGrpcInterceptor } from '../common/interceptors/error-grpc.interceptor';
+  import { CalculateRideDto } from '../dtos/ride.dto';
 import Redis from 'ioredis';
 
 @WebSocketGateway(8002, {
@@ -106,11 +103,11 @@ export class PassengerGateway
       `Client disconnected: ${client.id} user id: ${client.data.userId}`,
     );
   }
-
+  
   @SubscribeMessage('request-ride')
   async requestRide(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: RequestRideDto,
+    @MessageBody() payload: CalculateRideDto,
   ) {
     const { pickupLocation, destinationLocation } = payload;
     const [plat, plng] = pickupLocation.split(',');

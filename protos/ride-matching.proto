@@ -1,6 +1,6 @@
 syntax = "proto3";
 package ride_matching;
-import "location.proto";
+import "common.proto";
 service RideMatchingService {
     rpc requestRide(RequestRideRequest) returns (RequestRideResponse);
     rpc calcultateRide(CalculateRideRequest) returns (CalculateRideResponse);
@@ -8,10 +8,6 @@ service RideMatchingService {
     rpc acceptRide(AcceptRideRequest) returns (AcceptRideResponse);
 }
 
-message LatLng {
-    double lng = 1;
-    double lat = 2;
-}
 message Ride {
     string id = 1;
     string status = 2;

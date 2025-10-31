@@ -1,15 +1,12 @@
+import type { LatLng } from "@app/common";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty, IsObject, IsString } from "class-validator";
 
-import { IsNotEmpty, IsString } from "class-validator";
+export class DriverOnlineDto {
 
-export class RequestRideDto {
- 
-    @IsNotEmpty()
-    @IsString()
-    pickupLocation: string
-
-    @IsNotEmpty()
-    @IsString()
-    destinationLocation: string
+  @IsNotEmpty()
+  @IsObject()
+  location: LatLng
 }
 export class CalculateRideDto {
   @IsNotEmpty()

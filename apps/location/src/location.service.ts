@@ -1,6 +1,8 @@
 import {
+  IDriverOfflineRequest,
+  IDriverOnlineRequest,
   IGetNearbyDriversRequest,
-  IUpdateLocationRequest,
+  
   REDIS_CLIENT,
 } from '@app/common';
 import { Inject, Injectable } from '@nestjs/common';
@@ -16,13 +18,9 @@ export class LocationService {
     private readonly redisClient: Redis,
   ) {}
 
-  async updateLocation(dto: IUpdateLocationRequest) {
-    const now = Date.now().toString();
-    const hashKey = `driver:status:${dto.userId}`;
-    
-    await this.redisClient.geoadd(this.GEO_KEY, dto.longitude, dto.latitude, dto.userId);
-
-    await this.redisClient.hset(hashKey, 'status', 'online', 'lastSeen', now);
+  async driverOnline(dto: IDriverOnlineRequest) {
+  const { location, userId } = dto;
+    await this.redisClient.geoadd(this.GEO_KEY, location.lng, location.lat, userId);
 
     return {
       message: 'Location updated successfully',
@@ -54,5 +52,13 @@ export class LocationService {
       return { driverIds };
   
   
+  }
+  async driverOffline(dto: IDriverOfflineRequest) {
+    const { driverId } = dto;
+    console.log('driverOffline', driverId);
+    await this.redisClient.zrem(this.GEO_KEY, driverId);
+    return {
+      message: 'Driver offline successfully',
+    };
   }
 }
