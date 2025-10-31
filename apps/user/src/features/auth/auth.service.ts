@@ -1,17 +1,21 @@
-import { IGoogleLoginRequest, IGoogleLoginResponse } from '@app/common';
+import {
+  IGoogleLoginRequest,
+  IGoogleLoginResponse,
+  IInvalidateAllSessionsRequest,
+  IInvalidateSessionRequest,
+  IValidateSessionRequest,
+  IValidateSessionResponse,
+} from '@app/common';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { InjectRepository } from '@nestjs/typeorm';
 import { catchError, lastValueFrom, map } from 'rxjs';
-import { UserEntity } from '../database/entities/user.entity';
-import { Repository } from 'typeorm';
-import { UserService } from './user.service';
+import { UserService } from '../user/user.service';
 import {
   GoogleTokenResponse,
   GoogleUserProfile,
-} from '../common/interfaces/google-auth.interface';
-import { SessionService } from './session.service';
+} from '../../common/interfaces/google-auth.interface';
+import { SessionService } from '../session/session.service';
 
 @Injectable()
 export class AuthService {
@@ -37,17 +41,31 @@ export class AuthService {
     const userProfile = await this.getGoogleUserProfile(accessToken);
     const user = await this.userService.createUser(userProfile);
 
-    // generate session
+    // Generate session
     const sessionId = await this.sessionService.create({
       userId: user.id,
       ipAddress: payload.ipAddress,
       userAgent: payload.userAgent,
-    
     });
+
     return {
       message: 'Authentication successful',
       sessionId,
     };
+  }
+
+  async validateSession(
+    payload: IValidateSessionRequest,
+  ): Promise<IValidateSessionResponse> {
+    return this.sessionService.validate(payload.sessionId);
+  }
+
+  async invalidateSession(payload: IInvalidateSessionRequest) {
+    return this.sessionService.invalidate(payload.sessionId);
+  }
+
+  async invalidateAllSessions(payload: IInvalidateAllSessionsRequest) {
+    return this.sessionService.invalidateAllSessions(payload.userId);
   }
 
   private async getGoogleUserProfile(
@@ -131,3 +149,4 @@ export class AuthService {
     return response.access_token;
   }
 }
+

@@ -30,8 +30,10 @@ import {
 } from '@app/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-  import { CalculateRideDto } from '../dtos/ride.dto';
+import { CalculateRideDto } from './dto/calculate-ride.dto';
+import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
+import { WsExceptionFilter } from '../../common/filters/ws-exception.filter';
 
 @WebSocketGateway(8002, {
   namespace: 'passenger',
@@ -41,6 +43,7 @@ import Redis from 'ioredis';
     credentials: true,
   },
 })
+@UseFilters(WsExceptionFilter)
 export class PassengerGateway
   implements
     OnModuleInit,
@@ -68,23 +71,21 @@ export class PassengerGateway
     this.authClient =
       this.authGrpcClient.getService<IAuthService>(AUTH_SERVICE_NAME);
   }
-  afterInit() {
-    this.redisClient.subscribe('ride.accepted', (err, count) => {
-      if (err) {
-        this.logger.error(err);
-      }
-    });
 
-    this.redisClient.on('message', (channel, message) => {
-      const payload = JSON.parse(message);
-      if (channel === 'ride.accepted') {
-        const { userId, driver } = payload;
-        this.server.to(`passenger:${userId}`).emit('ride.accepted', {
-          driver,
-        });
-      }
-    });
+  async afterInit(server: Server) {
+    // Setup Redis IO Adapter for Socket.IO
+    const mainServer = (server as any).server || server;
+
+    if (typeof mainServer.adapter === 'function') {
+      const pubClient = this.redisClient.duplicate();
+      const subClient = this.redisClient.duplicate();
+      mainServer.adapter(createAdapter(pubClient, subClient));
+      this.logger.log('Redis IO Adapter initialized for PassengerGateway');
+    } else {
+      this.logger.log('Redis IO Adapter already initialized');
+    }
   }
+
   async handleConnection(client: Socket) {
     try {
       await this.authenticate(client);
@@ -93,6 +94,7 @@ export class PassengerGateway
         `Client connected: ${client.id} user id: ${client.data.userId}`,
       );
     } catch (error) {
+      this.logger.error(`Connection failed for client ${client.id}`, error);
       client.disconnect();
     }
   }
@@ -103,7 +105,7 @@ export class PassengerGateway
       `Client disconnected: ${client.id} user id: ${client.data.userId}`,
     );
   }
-  
+
   @SubscribeMessage('request-ride')
   async requestRide(
     @ConnectedSocket() client: Socket,
@@ -112,6 +114,7 @@ export class PassengerGateway
     const { pickupLocation, destinationLocation } = payload;
     const [plat, plng] = pickupLocation.split(',');
     const [dlat, dlng] = destinationLocation.split(',');
+
     return await lastValueFrom(
       this.rideMatchingClient.requestRide({
         userId: client.data.userId,
@@ -126,6 +129,7 @@ export class PassengerGateway
       }),
     );
   }
+
   @SubscribeMessage('calculate-ride')
   async calculateRide(
     @ConnectedSocket() client: Socket,
@@ -135,6 +139,7 @@ export class PassengerGateway
     const [pickupLatitude, pickupLongitude] = pickupLocation.split(',');
     const [destinationLatitude, destinationLongitude] =
       destinationLocation.split(',');
+
     return await lastValueFrom(
       this.rideMatchingClient.calcultateRide({
         pickupLocation: {
@@ -148,24 +153,29 @@ export class PassengerGateway
       }),
     );
   }
+
   private async authenticate(client: Socket) {
-    // auth
     const sessionId = client.request.headers.cookie
       ?.split('snapp-session=')[1]
       ?.split(';')[0];
+
     if (!sessionId) {
-      throw new WsException('Unauthorized');
+      throw new WsException('Unauthorized: Session ID is required');
     }
 
     const result = await lastValueFrom(
       this.authClient.validateSession({ sessionId: sessionId! }),
     );
+
     if (!result) {
-      throw new WsException('Unauthorized');
+      throw new WsException('Unauthorized: Invalid session');
     }
-    if(result.role !== Role.USER) {
-      throw new WsException('Forbidden');
+
+    if (result.role !== Role.USER) {
+      throw new WsException('Forbidden: User role required');
     }
+
     client.data.userId = result.userId;
   }
 }
+

@@ -18,21 +18,23 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CreateOrUpdateDriverProfileDto, UpdateUserRoleDto } from '../dtos/user..dto';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { CreateOrUpdateDriverProfileDto } from './dto/create-driver-profile.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import type { Request } from 'express';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
-import { SwaggerConsumes } from '../common/enums/swagger.enum';
-import { CheckRole } from '../common/decorators/role.decorator';
+import { SwaggerConsumes } from '../../common/enums/swagger.enum';
 
 @Controller('user')
 export class UserController implements OnModuleInit {
   private userClientService: IUserService;
   constructor(@Inject(USER_PACKAGE_NAME) private readonly client: ClientGrpc) {}
+
   onModuleInit() {
     this.userClientService =
       this.client.getService<IUserService>(USER_SERVICE_NAME);
   }
+
   @Patch('select-role')
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
   @UseGuards(AuthGuard)
@@ -43,12 +45,16 @@ export class UserController implements OnModuleInit {
       role: dto.role,
     });
   }
+
   @Post('driver/profile')
   @UseGuards(AuthGuard)
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Create driver profile' })
-  createOrUpdateDriverProfile(@Body() dto: CreateOrUpdateDriverProfileDto, @Req() req: Request) {
+  @ApiOperation({ summary: 'Create or update driver profile' })
+  createOrUpdateDriverProfile(
+    @Body() dto: CreateOrUpdateDriverProfileDto,
+    @Req() req: Request,
+  ) {
     return this.userClientService.createOrUpdateDriverProfile({
       userId: req.user.userId,
       carPlateNumber: dto.carPlateNumber,
@@ -56,9 +62,10 @@ export class UserController implements OnModuleInit {
       carColor: dto.carColor,
     });
   }
+
   @Get('check-driver-profile')
   @ApiConsumes(SwaggerConsumes.URL_ENCODED, SwaggerConsumes.JSON)
-  @ApiOperation({ summary: 'Check driver profile' })
+  @ApiOperation({ summary: 'Check if driver profile exists' })
   @UseGuards(AuthGuard)
   checkDriverProfile(@Req() req: Request) {
     return this.userClientService.checkDriverProfile({
@@ -68,9 +75,11 @@ export class UserController implements OnModuleInit {
 
   @Get('get-role')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get user role' })
   getRole(@Req() req: Request) {
     return this.userClientService.getRole({
       userId: req.user.userId,
     });
   }
 }
+
