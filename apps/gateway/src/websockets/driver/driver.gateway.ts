@@ -76,13 +76,24 @@ export class DriverGateway
   }
 
   async afterInit(server: Server) {
-  
+    await this.redisClient.subscribe('ride.requested');
+    this.redisClient.on('message', (channel, message) => {
+      if (channel === 'ride.requested') {
+        const {driverIds, user, rideDetails} = JSON.parse(message);
+        for (const driverId of driverIds) {
+          this.server.to(`driver:${driverId}`).emit('ride.requested', {
+            user,
+            rideDetails,
+          });
+        }
+      }
+    });
   }
 
   async handleConnection(client: Socket) {
     try {
       await this.authenticate(client);
-      client.join(`driver:${client.data.userId}`);
+
       this.logger.log(
         `Client connected: ${client.id} user id: ${client.data.userId}`,
       );
@@ -107,21 +118,26 @@ export class DriverGateway
   }
 
   @SubscribeMessage('driver-online')
-  driverOnline(
+  async driverOnline(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: DriverOnlineDto,
   ) {
-    return this.locationClientService.driverOnline({
+    await this.locationClientService.driverOnline({
       userId: client.data.userId,
       location: payload.location,
     });
+
+    client.join(`driver:${client.data.userId}`);
+    this.logger.log(`Driver ${client.data.userId} is now online`);
   }
 
   @SubscribeMessage('driver-offline')
   async driverOffline(@ConnectedSocket() client: Socket) {
-    return await this.locationClientService.driverOffline({
+  
+     await this.locationClientService.driverOffline({
       driverId: client.data.userId,
     });
+    client.leave(`driver:${client.data.userId}`);
   }
 
   @SubscribeMessage('ride-accepted')

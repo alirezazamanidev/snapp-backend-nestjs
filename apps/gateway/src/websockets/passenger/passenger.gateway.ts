@@ -73,23 +73,22 @@ export class PassengerGateway
   }
 
   async afterInit(server: Server) {
-    // Setup Redis IO Adapter for Socket.IO
-    const mainServer = (server as any).server || server;
-
-    if (typeof mainServer.adapter === 'function') {
-      const pubClient = this.redisClient.duplicate();
-      const subClient = this.redisClient.duplicate();
-      mainServer.adapter(createAdapter(pubClient, subClient));
-      this.logger.log('Redis IO Adapter initialized for PassengerGateway');
-    } else {
-      this.logger.log('Redis IO Adapter already initialized');
-    }
+    await this.redisClient.subscribe('ride.accepted');
+    this.redisClient.on('message', (channel, message) => {
+      if (channel === 'ride.accepted') {
+        const { driver, passenger } = JSON.parse(message);
+        this.server.to(`passenger:${passenger.userId}`).emit('ride.accepted', {
+          driver,
+          passenger,
+        });
+      }
+    });
   }
 
   async handleConnection(client: Socket) {
     try {
       await this.authenticate(client);
-      client.join(`passenger:${client.data.userId}`);
+
       this.logger.log(
         `Client connected: ${client.id} user id: ${client.data.userId}`,
       );
@@ -115,7 +114,7 @@ export class PassengerGateway
     const [plat, plng] = pickupLocation.split(',');
     const [dlat, dlng] = destinationLocation.split(',');
 
-    return await lastValueFrom(
+    await lastValueFrom(
       this.rideMatchingClient.requestRide({
         userId: client.data.userId,
         pickupLocation: {
@@ -128,6 +127,7 @@ export class PassengerGateway
         },
       }),
     );
+    client.join(`passenger:${client.data.userId}`);
   }
 
   @SubscribeMessage('calculate-ride')

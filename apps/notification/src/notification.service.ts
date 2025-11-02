@@ -19,7 +19,6 @@ export class NotificationService implements OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
   private userClientService: IUserService;
   private rideMatchingClientService: IRideMatchingService;
-  private redisPublisher: Redis;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
@@ -35,15 +34,10 @@ export class NotificationService implements OnModuleInit {
       this.rideMatchingClient.getService<IRideMatchingService>(
         RIDE_MATCHING_SERVICE_NAME,
       );
-
-    // Create a separate Redis client for publishing messages
-    this.redisPublisher = this.redisClient.duplicate();
-
-    this.logger.log('Notification service initialized');
   }
 
   async handleRideRequested(payload: IRideRequestedPayload) {
-    try {
+    
       const { rideId, userId, driverIds } = payload;
 
       // Fetch user and ride details in parallel for better performance
@@ -51,62 +45,28 @@ export class NotificationService implements OnModuleInit {
         lastValueFrom(this.userClientService.getProfile({ userId })),
         lastValueFrom(
           this.rideMatchingClientService.getRideDetails({ rideId }),
-        ),
+        ), 
       ]);
 
-      // Publish notification to Redis for each driver
-      // Gateway will subscribe to these channels and emit to connected clients
-      const notificationData = {
-        event: 'ride.requested',
-        data: {
-          ride: rideDetails.ride,
+        await this.redisClient.publish('ride.requested', JSON.stringify({
           user,
-        },
-      };
+          rideDetails,  
+          driverIds,
+        }));
+      
 
-      for (const driverId of driverIds) {
-        await this.redisPublisher.publish(
-          `notification:driver:${driverId}`,
-          JSON.stringify(notificationData),
-        );
-      }
-
-      this.logger.log(
-        `Ride requested notification published for ${driverIds.length} drivers`,
-      );
-    } catch (error) {
-      this.logger.error('Error handling ride requested:', error);
-      throw error;
-    }
   }
 
   async handleRideAccepted(payload: IRideAcceptedPayload) {
-    try {
-      const { driverId, userId } = payload;
-      const driver = await lastValueFrom(
-        this.userClientService.getProfile({ userId: driverId }),
-      );
-
-      // Publish notification to Redis for passenger
-      // Gateway will subscribe to this channel and emit to connected client
-      const notificationData = {
-        event: 'ride.accepted',
-        data: {
-          driver,
-        },
-      };
-
-      await this.redisPublisher.publish(
-        `notification:passenger:${userId}`,
-        JSON.stringify(notificationData),
-      );
-
-      this.logger.log(
-        `Ride accepted notification published for passenger ${userId}`,
-      );
-    } catch (error) {
-      this.logger.error('Error handling ride accepted:', error);
-      throw error;
-    }
+   
+   const { driverId, userId } = payload;
+   const [driver, passenger] = await Promise.all([
+    lastValueFrom(this.userClientService.getProfile({ userId: driverId })),
+    lastValueFrom(this.userClientService.getProfile({ userId })),
+   ]);
+   await this.redisClient.publish('ride.accepted', JSON.stringify({
+    driver,
+    passenger,
+   }));
   }
 }
